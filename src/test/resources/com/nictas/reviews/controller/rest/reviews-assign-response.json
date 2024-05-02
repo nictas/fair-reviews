@@ -1,0 +1,14 @@
+{
+    "assignees": [
+        {
+            "login": "foo",
+            "email": "foo@example.com",
+            "score": 80.8
+        },
+        {
+            "login": "bar",
+            "email": "bar@example.com",
+            "score": 7.0
+        }
+    ]
+}
