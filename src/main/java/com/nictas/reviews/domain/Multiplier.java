@@ -13,6 +13,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.Setter;
 import lombok.With;
 import lombok.extern.jackson.Jacksonized;
@@ -35,6 +36,7 @@ public class Multiplier {
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     private List<FileMultiplier> fileMultipliers = Collections.emptyList();
     @Builder.Default
+    @EqualsAndHashCode.Exclude
     private OffsetDateTime createdAt = OffsetDateTime.now();
 
     protected Multiplier() {

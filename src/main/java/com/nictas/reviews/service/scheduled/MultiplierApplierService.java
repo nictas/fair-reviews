@@ -14,6 +14,7 @@ import com.nictas.reviews.service.MultiplierService;
 import com.nictas.reviews.service.PullRequestReviewService;
 import com.nictas.reviews.service.score.PullRequestScoreComputer;
 
+import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -37,6 +38,7 @@ public class MultiplierApplierService {
     }
 
     @Scheduled(cron = "0 0 0 * * *")
+    @Transactional
     public void applyLatestMultiplier() {
         log.info("Applying latest multiplier to all existing PR reviews");
         Multiplier latestMultiplier = multiplierService.getLatestMultiplier();
@@ -57,7 +59,7 @@ public class MultiplierApplierService {
                             .getLogin());
                     Developer updatedDeveloper = developer.withScore(developer.getScore() + scoreDifference);
                     log.info("Applying new score {} with latest multiplier to PR review: {}", newScore, review);
-                    pullRequestReviewService.updateReview(review.withScore(newScore)
+                    pullRequestReviewService.saveReview(review.withScore(newScore)
                             .withMultiplier(latestMultiplier)
                             .withDeveloper(updatedDeveloper));
                     log.info("Applying score difference {} to developer: {}", scoreDifference, developer);

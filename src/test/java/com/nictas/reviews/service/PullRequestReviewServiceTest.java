@@ -130,7 +130,7 @@ class PullRequestReviewServiceTest {
         List<PullRequestReview> reviews = List.of(REVIEW_1, REVIEW_2);
         Pageable pageable = PageRequest.of(0, 10);
         Page<PullRequestReview> reviewsPage = new PageImpl<>(reviews, pageable, reviews.size());
-        when(pullRequestReviewRepository.getAll(pageable)).thenReturn(reviewsPage);
+        when(pullRequestReviewRepository.findAll(pageable)).thenReturn(reviewsPage);
 
         Page<PullRequestReview> actualReviewsPage = pullRequestReviewService.getAllReviews(pageable);
 
@@ -139,7 +139,7 @@ class PullRequestReviewServiceTest {
 
     @Test
     void testGetReview() {
-        when(pullRequestReviewRepository.get(REVIEW_1.getId())).thenReturn(Optional.of(REVIEW_1));
+        when(pullRequestReviewRepository.findById(REVIEW_1.getId())).thenReturn(Optional.of(REVIEW_1));
 
         PullRequestReview review = pullRequestReviewService.getReview(REVIEW_1.getId());
 
@@ -149,7 +149,7 @@ class PullRequestReviewServiceTest {
     @Test
     void testGetReviewNotFound() {
         UUID id = UUID.randomUUID();
-        when(pullRequestReviewRepository.get(id)).thenReturn(Optional.empty());
+        when(pullRequestReviewRepository.findById(id)).thenReturn(Optional.empty());
 
         NotFoundException exception = assertThrows(NotFoundException.class,
                 () -> pullRequestReviewService.getReview(id));
@@ -158,17 +158,10 @@ class PullRequestReviewServiceTest {
     }
 
     @Test
-    void testCreateReview() {
-        pullRequestReviewService.createReview(REVIEW_1);
+    void testSaveReview() {
+        pullRequestReviewService.saveReview(REVIEW_1);
 
-        verify(pullRequestReviewRepository).create(REVIEW_1);
-    }
-
-    @Test
-    void testUpdateReview() {
-        pullRequestReviewService.updateReview(REVIEW_1);
-
-        verify(pullRequestReviewRepository).update(REVIEW_1);
+        verify(pullRequestReviewRepository).save(REVIEW_1);
     }
 
     @Test
@@ -176,7 +169,8 @@ class PullRequestReviewServiceTest {
         List<PullRequestReview> reviews = List.of(REVIEW_1);
         Pageable pageable = PageRequest.of(0, 10);
         Page<PullRequestReview> reviewsPage = new PageImpl<>(reviews, pageable, reviews.size());
-        when(pullRequestReviewRepository.getByUrl(REVIEW_1.getPullRequestUrl(), pageable)).thenReturn(reviewsPage);
+        when(pullRequestReviewRepository.findByPullRequestUrl(REVIEW_1.getPullRequestUrl(), pageable))
+                .thenReturn(reviewsPage);
 
         Page<PullRequestReview> actualReviewsPage = pullRequestReviewService
                 .getReviewsByUrl(REVIEW_1.getPullRequestUrl(), pageable);
@@ -189,14 +183,14 @@ class PullRequestReviewServiceTest {
         List<PullRequestReview> reviews = List.of(REVIEW_1, REVIEW_2);
         Pageable pageable = PageRequest.of(0, 10);
         Page<PullRequestReview> reviewsPage = new PageImpl<>(reviews, pageable, reviews.size());
-        when(pullRequestReviewRepository.getByDeveloperLogin(DEVELOPER_FOO.getLogin(), pageable))
+        when(pullRequestReviewRepository.findByDeveloperLogin(DEVELOPER_FOO.getLogin(), pageable))
                 .thenReturn(reviewsPage);
 
         Page<PullRequestReview> actualReviewsPage = pullRequestReviewService
                 .getReviewsByDeveloperLogin(DEVELOPER_FOO.getLogin(), pageable);
 
         assertSame(reviewsPage, actualReviewsPage);
-        verify(pullRequestReviewRepository, times(1)).getByDeveloperLogin(DEVELOPER_FOO.getLogin(), pageable);
+        verify(pullRequestReviewRepository, times(1)).findByDeveloperLogin(DEVELOPER_FOO.getLogin(), pageable);
     }
 
     @Test
@@ -204,14 +198,14 @@ class PullRequestReviewServiceTest {
         List<PullRequestReview> reviews = List.of(REVIEW_1, REVIEW_2);
         Pageable pageable = PageRequest.of(0, 10);
         Page<PullRequestReview> reviewsPage = new PageImpl<>(reviews, pageable, reviews.size());
-        when(pullRequestReviewRepository.getWithDifferentMultiplierIds(MULTIPLIER.getId(), pageable))
+        when(pullRequestReviewRepository.findWithDifferentMultiplierIds(MULTIPLIER.getId(), pageable))
                 .thenReturn(reviewsPage);
 
         Page<PullRequestReview> actualReviewsPage = pullRequestReviewService
                 .getReviewsWithDifferentMultiplierIds(MULTIPLIER.getId(), pageable);
 
         assertSame(reviewsPage, actualReviewsPage);
-        verify(pullRequestReviewRepository, times(1)).getWithDifferentMultiplierIds(MULTIPLIER.getId(), pageable);
+        verify(pullRequestReviewRepository, times(1)).findWithDifferentMultiplierIds(MULTIPLIER.getId(), pageable);
     }
 
     @Test
@@ -220,7 +214,7 @@ class PullRequestReviewServiceTest {
         when(developerService.getDeveloperWithLowestScore(loginExclusionList)).thenReturn(DEVELOPER_FOO);
         when(pullRequestScoreComputer.computeScore(PR_URL))
                 .thenReturn(new PullRequestAssessment(PR_URL, PR_FILE_DETAILS, PR_SCORE, MULTIPLIER));
-        when(pullRequestReviewRepository.getByUrl(PR_URL, Pageable.unpaged())).thenReturn(Page.empty());
+        when(pullRequestReviewRepository.findByPullRequestUrl(PR_URL, Pageable.unpaged())).thenReturn(Page.empty());
 
         List<PullRequestReview> reviews = pullRequestReviewService.assign(PR_URL, Collections.emptyList(),
                 loginExclusionList);
@@ -231,7 +225,7 @@ class PullRequestReviewServiceTest {
         Developer expectedAssignee = DEVELOPER_FOO.withScore(PR_SCORE);
         assertEquals(expectedAssignee, review.getDeveloper());
         verify(developerService).saveDeveloper(expectedAssignee);
-        verify(pullRequestReviewRepository).create(review);
+        verify(pullRequestReviewRepository).save(review);
     }
 
     @Test
@@ -240,7 +234,7 @@ class PullRequestReviewServiceTest {
         when(developerService.getDeveloper(DEVELOPER_BAR.getLogin())).thenReturn(DEVELOPER_BAR);
         when(pullRequestScoreComputer.computeScore(PR_URL))
                 .thenReturn(new PullRequestAssessment(PR_URL, PR_FILE_DETAILS, PR_SCORE, MULTIPLIER));
-        when(pullRequestReviewRepository.getByUrl(PR_URL, Pageable.unpaged())).thenReturn(Page.empty());
+        when(pullRequestReviewRepository.findByPullRequestUrl(PR_URL, Pageable.unpaged())).thenReturn(Page.empty());
 
         List<PullRequestReview> reviews = pullRequestReviewService.assign(PR_URL,
                 List.of(DEVELOPER_FOO.getLogin(), DEVELOPER_BAR.getLogin()), Collections.emptyList());
@@ -254,8 +248,8 @@ class PullRequestReviewServiceTest {
         assertEquals(expectedAssigneeBar, reviewOfBar.getDeveloper());
         verify(developerService).saveDeveloper(expectedAssigneeFoo);
         verify(developerService).saveDeveloper(expectedAssigneeBar);
-        verify(pullRequestReviewRepository).create(reviewOfFoo);
-        verify(pullRequestReviewRepository).create(reviewOfBar);
+        verify(pullRequestReviewRepository).save(reviewOfFoo);
+        verify(pullRequestReviewRepository).save(reviewOfBar);
     }
 
     @Test
@@ -264,7 +258,7 @@ class PullRequestReviewServiceTest {
         when(developerService.getDeveloper(DEVELOPER_BAR.getLogin())).thenReturn(DEVELOPER_BAR);
         when(pullRequestScoreComputer.computeScore(PR_URL))
                 .thenReturn(new PullRequestAssessment(PR_URL, PR_FILE_DETAILS, PR_SCORE, MULTIPLIER));
-        when(pullRequestReviewRepository.getByUrl(PR_URL, Pageable.unpaged())).thenReturn(Page.empty());
+        when(pullRequestReviewRepository.findByPullRequestUrl(PR_URL, Pageable.unpaged())).thenReturn(Page.empty());
 
         List<PullRequestReview> reviews = pullRequestReviewService.assign(PR_URL,
                 List.of(DEVELOPER_FOO.getLogin(), DEVELOPER_BAR.getLogin()), Collections.emptyList());
@@ -283,8 +277,8 @@ class PullRequestReviewServiceTest {
         assertEquals(DEVELOPER_FOO.withScore(PR_SCORE), reviewOfFoo.getDeveloper());
         assertEquals(DEVELOPER_BAR.withScore(PR_SCORE), reviewOfBar.getDeveloper());
 
-        verify(pullRequestReviewRepository).create(reviewOfFoo);
-        verify(pullRequestReviewRepository).create(reviewOfBar);
+        verify(pullRequestReviewRepository).save(reviewOfFoo);
+        verify(pullRequestReviewRepository).save(reviewOfBar);
     }
 
     @Test
@@ -300,7 +294,7 @@ class PullRequestReviewServiceTest {
                 .developer(DEVELOPER_FOO)
                 .build();
         Pageable pageable = Pageable.unpaged();
-        when(pullRequestReviewRepository.getByUrl(PR_URL, pageable))
+        when(pullRequestReviewRepository.findByPullRequestUrl(PR_URL, pageable))
                 .thenReturn(new PageImpl<>(List.of(existingReview), pageable, 1));
 
         List<PullRequestReview> reviews = pullRequestReviewService.assign(PR_URL, Collections.emptyList(),
@@ -323,7 +317,7 @@ class PullRequestReviewServiceTest {
                 .developer(DEVELOPER_FOO)
                 .build();
         Pageable pageable = Pageable.unpaged();
-        when(pullRequestReviewRepository.getByUrl(PR_URL, pageable))
+        when(pullRequestReviewRepository.findByPullRequestUrl(PR_URL, pageable))
                 .thenReturn(new PageImpl<>(List.of(review), pageable, 1));
 
         List<String> assigneeList = List.of(DEVELOPER_FOO.getLogin(), DEVELOPER_BAR.getLogin());
@@ -336,18 +330,18 @@ class PullRequestReviewServiceTest {
     @Test
     void testDeleteReview() {
         UUID id = REVIEW_1.getId();
-        when(pullRequestReviewRepository.get(id)).thenReturn(Optional.of(REVIEW_1));
+        when(pullRequestReviewRepository.findById(id)).thenReturn(Optional.of(REVIEW_1));
 
         assertDoesNotThrow(() -> pullRequestReviewService.deleteReview(id));
 
         verify(developerService).saveDeveloper(DEVELOPER_FOO.withScore(DEVELOPER_FOO.getScore() - REVIEW_1.getScore()));
-        verify(pullRequestReviewRepository).delete(id);
+        verify(pullRequestReviewRepository).deleteById(id);
     }
 
     @Test
     void testDeleteReviewNotFound() {
         UUID id = REVIEW_1.getId();
-        when(pullRequestReviewRepository.get(id)).thenReturn(Optional.empty());
+        when(pullRequestReviewRepository.findById(id)).thenReturn(Optional.empty());
 
         NotFoundException exception = assertThrows(NotFoundException.class,
                 () -> pullRequestReviewService.deleteReview(id));

@@ -1,29 +1,23 @@
 package com.nictas.reviews.repository;
 
-import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.stereotype.Repository;
 
 import com.nictas.reviews.domain.PullRequestReview;
 
-public interface PullRequestReviewRepository {
+@Repository
+public interface PullRequestReviewRepository extends JpaRepository<PullRequestReview, UUID> {
 
-    Page<PullRequestReview> getAll(Pageable pageable);
+    Page<PullRequestReview> findByPullRequestUrl(String pullRequestUrl, Pageable pageable);
 
-    Optional<PullRequestReview> get(UUID id);
+    Page<PullRequestReview> findByDeveloperLogin(String developerLogin, Pageable pageable);
 
-    Page<PullRequestReview> getByUrl(String pullRequestUrl, Pageable pageable);
-
-    Page<PullRequestReview> getByDeveloperLogin(String developerLogin, Pageable pageable);
-
-    Page<PullRequestReview> getWithDifferentMultiplierIds(UUID id, Pageable pageable);
-
-    void create(PullRequestReview pullRequestReview);
-
-    void update(PullRequestReview pullRequestReview);
-
-    int delete(UUID id);
+    @Query("SELECT p FROM PullRequestReview p WHERE p.multiplier.id != :id")
+    Page<PullRequestReview> findWithDifferentMultiplierIds(UUID id, Pageable pageable);
 
 }

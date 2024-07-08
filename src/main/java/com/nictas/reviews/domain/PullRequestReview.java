@@ -9,14 +9,17 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.Setter;
 import lombok.With;
 import lombok.extern.jackson.Jacksonized;
 
 @Data
 @With
+@Setter(AccessLevel.NONE)
 @Builder
 @Jacksonized
 @AllArgsConstructor
@@ -27,13 +30,17 @@ public class PullRequestReview {
     @Id
     private UUID id = UUID.randomUUID();
     @ManyToOne
-    private final Developer developer;
-    private final double score;
+    private Developer developer;
+    private double score;
     @ManyToOne
-    private final Multiplier multiplier;
-    private final String pullRequestUrl;
+    private Multiplier multiplier;
+    private String pullRequestUrl;
     @Type(JsonBinaryType.class)
     @Column(columnDefinition = "jsonb")
-    private final PullRequestFileDetails pullRequestFileDetails;
+    private PullRequestFileDetails pullRequestFileDetails;
+
+    protected PullRequestReview() {
+        // Required by JPA.
+    }
 
 }
