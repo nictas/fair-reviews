@@ -206,6 +206,29 @@ class PullRequestReviewControllerTest {
     }
 
     @Test
+    void testAssignReviewerWithConflictingAssignees() throws Exception {
+        PullRequestAssignRequest request = new PullRequestAssignRequest("https://github.com/foo/bar/pull/87",
+                List.of(DEVELOPER_FOO.getLogin(), DEVELOPER_BAR.getLogin()), Collections.emptyList());
+        String requestBody = objectMapper.writeValueAsString(request);
+
+        IllegalArgumentException e = new IllegalArgumentException(
+                "Developers [foo] have already reviewed the PR before");
+        when(pullRequestReviewService.assign(request.getPullRequestUrl(), request.getAssigneeList(),
+                request.getAssigneeExclusionList())).thenThrow(e);
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/reviews/assign")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(MockMvcResultMatchers.status()
+                        .isBadRequest())
+                .andExpect(MockMvcResultMatchers.content()
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.message")
+                        .value(e.getMessage()));
+
+    }
+
+    @Test
     void testDeleteReview() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.delete("/reviews/91a8bdeb-8457-4905-bd08-9d2a46f27b92"))
                 .andExpect(MockMvcResultMatchers.status()
