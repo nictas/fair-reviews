@@ -75,4 +75,3 @@ databaseChangeLog:
             referencedTableName: multiplier
             referencedColumnNames: [id]
             constraintName: fk_pull_request_review_multiplier
-            onDelete: cascade

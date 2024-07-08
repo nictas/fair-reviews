@@ -268,6 +268,30 @@ class PullRequestReviewRepositoryTest {
     }
 
     @Test
+    void testFindByMultiplierId() {
+        List<PullRequestReview> reviews = List.of(REVIEW_1, REVIEW_2, REVIEW_3, REVIEW_4);
+        reviews.forEach(pullRequestReviewRepository::save);
+
+        Pageable pageable = Pageable.unpaged();
+        Page<PullRequestReview> reviewsPage = pullRequestReviewRepository.findByMultiplierId(MULTIPLIER_1.getId(),
+                pageable);
+        Page<PullRequestReview> expectedReviewsPage = new PageImpl<>(List.of(REVIEW_1, REVIEW_2), pageable, 2);
+        assertEquals(expectedReviewsPage, reviewsPage);
+    }
+
+    @Test
+    void testFindByMultiplierIdWithPagination() {
+        List<PullRequestReview> reviews = List.of(REVIEW_1, REVIEW_2, REVIEW_3, REVIEW_4);
+        reviews.forEach(pullRequestReviewRepository::save);
+
+        Pageable pageable = PageRequest.of(0, 1);
+        Page<PullRequestReview> reviewsPage = pullRequestReviewRepository.findByMultiplierId(MULTIPLIER_1.getId(),
+                pageable);
+        Page<PullRequestReview> expectedReviewsPage = new PageImpl<>(List.of(REVIEW_1), pageable, 2);
+        assertEquals(expectedReviewsPage, reviewsPage);
+    }
+
+    @Test
     void testFindWithDifferentMultiplierIds() {
         List<PullRequestReview> reviews = List.of(REVIEW_1, REVIEW_2, REVIEW_3, REVIEW_4);
         reviews.forEach(pullRequestReviewRepository::save);

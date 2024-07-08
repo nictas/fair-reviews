@@ -23,10 +23,15 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+import com.nictas.reviews.domain.Developer;
 import com.nictas.reviews.domain.FileMultiplier;
 import com.nictas.reviews.domain.Multiplier;
+import com.nictas.reviews.domain.PullRequestFileDetails;
+import com.nictas.reviews.domain.PullRequestFileDetails.ChangedFile;
+import com.nictas.reviews.domain.PullRequestReview;
 import com.nictas.reviews.error.NotFoundException;
 import com.nictas.reviews.repository.MultiplierRepository;
+import com.nictas.reviews.repository.PullRequestReviewRepository;
 
 @ExtendWith(MockitoExtension.class)
 class MultiplierServiceTest {
@@ -69,8 +74,49 @@ class MultiplierServiceTest {
             .createdAt(OffsetDateTime.of(2024, 5, 13, 6, 0, 0, 0, ZoneOffset.UTC))
             .build();
 
+    private static final Developer DEVELOPER_FOO = Developer.builder()
+            .login("foo")
+            .email("foo@example.com")
+            .score(80.8)
+            .build();
+
+    private static final PullRequestReview REVIEW_1 = PullRequestReview.builder()
+            .id(UUID.fromString("91a8bdeb-8457-4905-bd08-9d2a46f27b92"))
+            .pullRequestUrl("https://github.com/foo/bar/pull/87")
+            .pullRequestFileDetails(new PullRequestFileDetails(List.of(//
+                    ChangedFile.builder()
+                            .name("foo.java")
+                            .additions(15)
+                            .deletions(11)
+                            .build())))
+            .score(20.7)
+            .developer(DEVELOPER_FOO)
+            .multiplier(MULTIPLIER_1)
+            .build();
+
+    private static final PullRequestReview REVIEW_2 = PullRequestReview.builder()
+            .id(UUID.fromString("dcb724e6-d2cb-4e63-a1ab-d5bc59e5cfdc"))
+            .pullRequestUrl("https://github.com/foo/bar/pull/90")
+            .pullRequestFileDetails(new PullRequestFileDetails(List.of(//
+                    ChangedFile.builder()
+                            .name("foo.java")
+                            .additions(10)
+                            .deletions(22)
+                            .build(),
+                    ChangedFile.builder()
+                            .name("bar.java")
+                            .additions(1)
+                            .deletions(3)
+                            .build())))
+            .score(60.1)
+            .developer(DEVELOPER_FOO)
+            .multiplier(MULTIPLIER_1)
+            .build();
+
     @Mock
     private MultiplierRepository multiplierRepository;
+    @Mock
+    private PullRequestReviewRepository pullRequestReviewRepository;
 
     @InjectMocks
     private MultiplierService multiplierService;
@@ -136,9 +182,11 @@ class MultiplierServiceTest {
     }
 
     @Test
-    void testDeleteDeveloper() {
+    void testDeleteMultiplier() {
         UUID id = MULTIPLIER_1.getId();
         when(multiplierRepository.findById(id)).thenReturn(Optional.of(MULTIPLIER_1));
+        when(pullRequestReviewRepository.findByMultiplierId(MULTIPLIER_1.getId(), Pageable.unpaged()))
+                .thenReturn(Page.empty());
 
         assertDoesNotThrow(() -> multiplierService.deleteMultiplier(id));
 
@@ -146,7 +194,7 @@ class MultiplierServiceTest {
     }
 
     @Test
-    void testDeleteDeveloperNotFound() {
+    void testDeleteMultiplierNotFound() {
         UUID id = MULTIPLIER_1.getId();
         when(multiplierRepository.findById(id)).thenReturn(Optional.empty());
 
@@ -154,6 +202,21 @@ class MultiplierServiceTest {
                 () -> multiplierService.deleteMultiplier(id));
 
         assertEquals("Could not find multiplier with ID: " + id, exception.getMessage());
+    }
+
+    @Test
+    void testDeleteMultiplierStillInUse() {
+        UUID id = MULTIPLIER_1.getId();
+        when(multiplierRepository.findById(id)).thenReturn(Optional.of(MULTIPLIER_1));
+        Pageable pageable = Pageable.unpaged();
+        Page<PullRequestReview> reviewsPage = new PageImpl<>(List.of(REVIEW_1, REVIEW_2), pageable, 2);
+        when(pullRequestReviewRepository.findByMultiplierId(MULTIPLIER_1.getId(), pageable)).thenReturn(reviewsPage);
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> multiplierService.deleteMultiplier(id));
+
+        assertEquals(String.format("Multiplier %s is still referenced in %d reviews: %s", id, reviewsPage.getSize(),
+                List.of(REVIEW_1.getId(), REVIEW_2.getId())), exception.getMessage());
     }
 
 }
