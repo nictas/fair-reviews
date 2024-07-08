@@ -6,7 +6,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,7 +14,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.nictas.reviews.domain.Developer;
-import com.nictas.reviews.repository.DeveloperRepository;
+import com.nictas.reviews.service.DeveloperService;
 import com.nictas.reviews.service.github.GitHubClient;
 import com.nictas.reviews.service.github.GitHubClientProvider;
 
@@ -31,14 +30,14 @@ class DeveloperSyncServiceTest {
     @Mock
     private GitHubClient client;
     @Mock
-    private DeveloperRepository developerRepository;
+    private DeveloperService developerService;
 
     private DeveloperSyncService developerSyncService;
 
     @BeforeEach
     void setUp() {
         when(clientProvider.getClientForUrl(DEVELOPERS_URL)).thenReturn(client);
-        developerSyncService = new DeveloperSyncService(clientProvider, developerRepository, DEVELOPERS_URL,
+        developerSyncService = new DeveloperSyncService(clientProvider, developerService, DEVELOPERS_URL,
                 DEVELOPERS_ORG, DEVELOPERS_TEAM);
     }
 
@@ -50,15 +49,15 @@ class DeveloperSyncServiceTest {
 
         when(client.getDevelopers(DEVELOPERS_ORG, DEVELOPERS_TEAM))
                 .thenReturn(List.of(developerFoo, developerBar, developerBaz));
-        when(developerRepository.get(developerFoo.getLogin())).thenReturn(Optional.empty());
-        when(developerRepository.get(developerBar.getLogin())).thenReturn(Optional.of(developerBar));
-        when(developerRepository.get(developerBaz.getLogin())).thenReturn(Optional.empty());
+        when(developerService.existsDeveloper(developerFoo.getLogin())).thenReturn(false);
+        when(developerService.existsDeveloper(developerBar.getLogin())).thenReturn(true);
+        when(developerService.existsDeveloper(developerBaz.getLogin())).thenReturn(false);
 
         developerSyncService.fetchAndUpdateDevelopers();
 
-        verify(developerRepository).create(developerFoo);
-        verify(developerRepository).create(developerBaz);
-        verify(developerRepository, times(2)).create(any()); // Verify that no other developers were created
+        verify(developerService).createDeveloper(developerFoo);
+        verify(developerService).createDeveloper(developerBaz);
+        verify(developerService, times(2)).createDeveloper(any()); // Verify that no other developers were created
     }
 
 }

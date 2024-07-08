@@ -9,7 +9,9 @@ import com.nictas.reviews.service.github.GitHubClient;
 import com.nictas.reviews.service.github.GitHubClientProvider;
 
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Component
 public class PullRequestScoreComputer {
 
@@ -23,8 +25,10 @@ public class PullRequestScoreComputer {
     public PullRequestAssessment computeScore(String pullRequestUrl) {
         GitHubClient client = clientProvider.getClientForUrl(pullRequestUrl);
 
+        log.info("Computing score for PR {}", pullRequestUrl);
         PullRequest pullRequest = PullRequest.fromUrl(pullRequestUrl);
         PullRequestFileDetails pullRequestFileDetails = client.getPullRequestInfo(pullRequest);
+        log.info("Fetched info for PR {}: {}", pullRequestUrl, pullRequestFileDetails);
         double score = computeScore(pullRequestFileDetails);
 
         return new PullRequestAssessment(pullRequestUrl, pullRequestFileDetails, score);

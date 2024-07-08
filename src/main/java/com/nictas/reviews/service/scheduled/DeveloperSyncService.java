@@ -9,7 +9,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import com.nictas.reviews.domain.Developer;
-import com.nictas.reviews.repository.DeveloperRepository;
+import com.nictas.reviews.service.DeveloperService;
 import com.nictas.reviews.service.github.GitHubClientProvider;
 
 import lombok.extern.slf4j.Slf4j;
@@ -19,18 +19,18 @@ import lombok.extern.slf4j.Slf4j;
 public class DeveloperSyncService {
 
     private final GitHubClientProvider clientProvider;
-    private final DeveloperRepository developerRepository;
+    private final DeveloperService developerService;
     private final String developersUrl;
     private final String developersOrg;
     private final String developersTeam;
 
     @Autowired
-    public DeveloperSyncService(GitHubClientProvider clientProvider, DeveloperRepository developerRepository,
+    public DeveloperSyncService(GitHubClientProvider clientProvider, DeveloperService developerService,
                                 @Value("${developers.github.url}") String developersUrl,
                                 @Value("${developers.github.org}") String developersOrg,
                                 @Value("${developers.github.team}") String developersTeam) {
         this.clientProvider = clientProvider;
-        this.developerRepository = developerRepository;
+        this.developerService = developerService;
         this.developersUrl = developersUrl;
         this.developersOrg = developersOrg;
         this.developersTeam = developersTeam;
@@ -52,10 +52,9 @@ public class DeveloperSyncService {
 
     private void updateDevelopers(List<Developer> developers) {
         for (Developer developer : developers) {
-            var existingDeveloper = developerRepository.get(developer.getLogin());
-            if (existingDeveloper.isEmpty()) {
-                log.info("Adding new developer: {}", developer.getLogin());
-                developerRepository.create(developer);
+            boolean developerExists = developerService.existsDeveloper(developer.getLogin());
+            if (!developerExists) {
+                developerService.createDeveloper(developer);
             }
         }
     }
