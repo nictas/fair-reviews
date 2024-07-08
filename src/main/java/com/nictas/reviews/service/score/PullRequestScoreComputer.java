@@ -3,8 +3,8 @@ package com.nictas.reviews.service.score;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import com.nictas.reviews.domain.FileMultiplier;
 import com.nictas.reviews.domain.Multiplier;
-import com.nictas.reviews.domain.Multiplier.FileMultiplier;
 import com.nictas.reviews.domain.PullRequest;
 import com.nictas.reviews.domain.PullRequestFileDetails;
 import com.nictas.reviews.domain.PullRequestFileDetails.ChangedFile;

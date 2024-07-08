@@ -15,8 +15,8 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+import com.nictas.reviews.domain.FileMultiplier;
 import com.nictas.reviews.domain.Multiplier;
-import com.nictas.reviews.domain.Multiplier.FileMultiplier;
 
 class InMemoryMultiplierRepositoryTest {
 
