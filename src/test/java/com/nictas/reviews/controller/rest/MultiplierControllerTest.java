@@ -29,8 +29,8 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nictas.reviews.domain.FileMultiplier;
 import com.nictas.reviews.domain.Multiplier;
-import com.nictas.reviews.domain.Multiplier.FileMultiplier;
 import com.nictas.reviews.error.NotFoundException;
 import com.nictas.reviews.service.MultiplierService;
 import com.nictas.reviews.service.scheduled.MultiplierApplierService;

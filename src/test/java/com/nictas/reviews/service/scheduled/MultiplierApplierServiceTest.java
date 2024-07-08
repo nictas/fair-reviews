@@ -17,8 +17,8 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 
 import com.nictas.reviews.domain.Developer;
+import com.nictas.reviews.domain.FileMultiplier;
 import com.nictas.reviews.domain.Multiplier;
-import com.nictas.reviews.domain.Multiplier.FileMultiplier;
 import com.nictas.reviews.domain.PullRequestFileDetails;
 import com.nictas.reviews.domain.PullRequestFileDetails.ChangedFile;
 import com.nictas.reviews.domain.PullRequestReview;

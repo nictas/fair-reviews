@@ -23,8 +23,8 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+import com.nictas.reviews.domain.FileMultiplier;
 import com.nictas.reviews.domain.Multiplier;
-import com.nictas.reviews.domain.Multiplier.FileMultiplier;
 import com.nictas.reviews.error.NotFoundException;
 import com.nictas.reviews.repository.MultiplierRepository;
 

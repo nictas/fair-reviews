@@ -5,6 +5,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,30 +20,18 @@ import lombok.extern.jackson.Jacksonized;
 @Builder
 @Jacksonized
 @AllArgsConstructor
+@Entity
 public class Multiplier {
 
     @Builder.Default
+    @Id
     private UUID id = UUID.randomUUID();
     private final double defaultAdditionsMultiplier;
     private final double defaultDeletionsMultiplier;
     @Builder.Default
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     private List<FileMultiplier> fileMultipliers = Collections.emptyList();
     @Builder.Default
     private OffsetDateTime createdAt = OffsetDateTime.now();
-
-    @Data
-    @With
-    @Builder
-    @Jacksonized
-    @AllArgsConstructor
-    public static class FileMultiplier {
-
-        @Builder.Default
-        private UUID id = UUID.randomUUID();
-        private final String fileExtension;
-        private final double additionsMultiplier;
-        private final double deletionsMultiplier;
-
-    }
 
 }
