@@ -81,7 +81,8 @@ class InMemoryMultiplierRepositoryTest {
 
     @Test
     void testCreateAndGet() {
-        multiplierRepository.create(MULTIPLIER_1);
+        Multiplier createdMultiplier = multiplierRepository.create(MULTIPLIER_1);
+        assertEquals(MULTIPLIER_1, createdMultiplier);
 
         Multiplier multiplier = multiplierRepository.get(MULTIPLIER_1.getId())
                 .get();
@@ -135,10 +136,8 @@ class InMemoryMultiplierRepositoryTest {
     @Test
     void testUpdate() {
         multiplierRepository.create(MULTIPLIER_1);
-        multiplierRepository.update(MULTIPLIER_1.withDefaultAdditionsMultiplier(5.0));
+        Multiplier mutiplier = multiplierRepository.update(MULTIPLIER_1.withDefaultAdditionsMultiplier(5.0));
 
-        Multiplier mutiplier = multiplierRepository.get(MULTIPLIER_1.getId())
-                .get();
         assertEquals(5.0, mutiplier.getDefaultAdditionsMultiplier());
         assertEquals(0.2, mutiplier.getDefaultDeletionsMultiplier());
     }

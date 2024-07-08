@@ -52,14 +52,14 @@ public class MultiplierService {
         return DEFAULT_MULTIPLIER;
     }
 
-    public void createMultiplier(Multiplier multiplier) {
+    public Multiplier createMultiplier(Multiplier multiplier) {
         log.info("Creating multiplier: {}", multiplier);
-        repository.create(multiplier);
+        return repository.create(multiplier);
     }
 
-    public void updateMultiplier(Multiplier multiplier) {
+    public Multiplier updateMultiplier(Multiplier multiplier) {
         log.info("Updating multiplier: {}", multiplier);
-        repository.update(multiplier);
+        return repository.update(multiplier);
     }
 
     public void deleteMultiplier(UUID id) {

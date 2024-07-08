@@ -108,15 +108,19 @@ class MultiplierServiceTest {
 
     @Test
     void testCreateMultiplier() {
-        multiplierService.createMultiplier(MULTIPLIER_1);
+        when(multiplierRepository.create(MULTIPLIER_1)).thenReturn(MULTIPLIER_1);
+        Multiplier multiplier = multiplierService.createMultiplier(MULTIPLIER_1);
 
+        assertEquals(MULTIPLIER_1, multiplier);
         verify(multiplierRepository).create(MULTIPLIER_1);
     }
 
     @Test
     void testUpdateMultiplier() {
-        multiplierService.updateMultiplier(MULTIPLIER_1);
+        when(multiplierRepository.update(MULTIPLIER_1)).thenReturn(MULTIPLIER_1);
+        Multiplier multiplier = multiplierService.updateMultiplier(MULTIPLIER_1);
 
+        assertEquals(MULTIPLIER_1, multiplier);
         verify(multiplierRepository).update(MULTIPLIER_1);
     }
 
