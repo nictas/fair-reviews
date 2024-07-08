@@ -6,6 +6,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,7 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.nictas.reviews.domain.Developer;
-import com.nictas.reviews.service.DeveloperService;
+import com.nictas.reviews.repository.DeveloperRepository;
 import com.nictas.reviews.service.github.GitHubClient;
 import com.nictas.reviews.service.github.GitHubClientProvider;
 
@@ -30,34 +31,56 @@ class DeveloperSyncServiceTest {
     @Mock
     private GitHubClient client;
     @Mock
-    private DeveloperService developerService;
+    private DeveloperRepository developerRepository;
 
     private DeveloperSyncService developerSyncService;
 
     @BeforeEach
     void setUp() {
         when(clientProvider.getClientForUrl(DEVELOPERS_URL)).thenReturn(client);
-        developerSyncService = new DeveloperSyncService(clientProvider, developerService, DEVELOPERS_URL,
+        developerSyncService = new DeveloperSyncService(clientProvider, developerRepository, DEVELOPERS_URL,
                 DEVELOPERS_ORG, DEVELOPERS_TEAM);
     }
 
     @Test
     void testAssignReviewerAddsMissingDevelopers() {
         Developer developerFoo = new Developer("foo", "foo@example.com");
+        Developer developerBar = new Developer("bar", "bar@example.com", 10.);
+        Developer developerBaz = new Developer("baz", "baz@example.com");
+        Developer developerQux = new Developer("qux", "qux@example.com", 30.);
+
+        when(client.getDevelopers(DEVELOPERS_ORG, DEVELOPERS_TEAM))
+                .thenReturn(List.of(developerFoo, developerBar, developerBaz, developerQux));
+        when(developerRepository.get(developerFoo.getLogin())).thenReturn(Optional.empty());
+        when(developerRepository.get(developerBar.getLogin())).thenReturn(Optional.of(developerBar));
+        when(developerRepository.get(developerBaz.getLogin())).thenReturn(Optional.empty());
+        when(developerRepository.get(developerQux.getLogin())).thenReturn(Optional.of(developerQux));
+
+        developerSyncService.fetchAndUpdateDevelopers();
+
+        verify(developerRepository).create(developerFoo.withScore(20.0));
+        verify(developerRepository).create(developerBaz.withScore(20.0));
+        verify(developerRepository, times(2)).create(any()); // Verify that no other developers were created
+    }
+    
+    @Test
+    void testAssignReviewerWithoutExistingDevelopers() {
+        Developer developerFoo = new Developer("foo", "foo@example.com");
         Developer developerBar = new Developer("bar", "bar@example.com");
         Developer developerBaz = new Developer("baz", "baz@example.com");
 
         when(client.getDevelopers(DEVELOPERS_ORG, DEVELOPERS_TEAM))
                 .thenReturn(List.of(developerFoo, developerBar, developerBaz));
-        when(developerService.existsDeveloper(developerFoo.getLogin())).thenReturn(false);
-        when(developerService.existsDeveloper(developerBar.getLogin())).thenReturn(true);
-        when(developerService.existsDeveloper(developerBaz.getLogin())).thenReturn(false);
+        when(developerRepository.get(developerFoo.getLogin())).thenReturn(Optional.empty());
+        when(developerRepository.get(developerBar.getLogin())).thenReturn(Optional.empty());
+        when(developerRepository.get(developerBaz.getLogin())).thenReturn(Optional.empty());
 
         developerSyncService.fetchAndUpdateDevelopers();
 
-        verify(developerService).createDeveloper(developerFoo);
-        verify(developerService).createDeveloper(developerBaz);
-        verify(developerService, times(2)).createDeveloper(any()); // Verify that no other developers were created
+        verify(developerRepository).create(developerFoo);
+        verify(developerRepository).create(developerBar);
+        verify(developerRepository).create(developerBaz);
+        verify(developerRepository, times(3)).create(any()); // Verify that no other developers were created
     }
 
 }
