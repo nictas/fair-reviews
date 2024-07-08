@@ -18,8 +18,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.nictas.reviews.domain.Multiplier;
-import com.nictas.reviews.domain.PullRequestFileDetails;
 import com.nictas.reviews.domain.Multiplier.FileMultiplier;
+import com.nictas.reviews.domain.PullRequestFileDetails;
 import com.nictas.reviews.domain.PullRequestFileDetails.ChangedFile;
 import com.nictas.reviews.service.MultiplierService;
 import com.nictas.reviews.service.github.GitHubClient;

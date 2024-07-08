@@ -3,6 +3,8 @@ package com.nictas.reviews.repository;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -14,11 +16,51 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import com.nictas.reviews.domain.Developer;
+import com.nictas.reviews.domain.Multiplier;
+import com.nictas.reviews.domain.Multiplier.FileMultiplier;
 import com.nictas.reviews.domain.PullRequestFileDetails;
 import com.nictas.reviews.domain.PullRequestFileDetails.ChangedFile;
 import com.nictas.reviews.domain.PullRequestReview;
 
 class InMemoryPullRequestReviewRepositoryTest {
+
+    private static final Multiplier MULTIPLIER_1 = Multiplier.builder()
+            .id(UUID.fromString("2f7fc3e6-b54f-4593-aaca-98aeed3d6d02"))
+            .defaultAdditionsMultiplier(1.0)
+            .defaultDeletionsMultiplier(0.2)
+            .fileMultipliers(List.of( //
+                    FileMultiplier.builder()
+                            .fileExtension(".java")
+                            .additionsMultiplier(2.0)
+                            .deletionsMultiplier(0.4)
+                            .build(), //
+                    FileMultiplier.builder()
+                            .fileExtension(".yaml")
+                            .additionsMultiplier(0.5)
+                            .deletionsMultiplier(0.2)
+                            .build() //
+            ))
+            .createdAt(OffsetDateTime.of(2024, 3, 3, 17, 15, 0, 0, ZoneOffset.UTC))
+            .build();
+
+    private static final Multiplier MULTIPLIER_2 = Multiplier.builder()
+            .id(UUID.fromString("98626460-80e1-4acc-b2ea-b28e018ca6d2"))
+            .defaultAdditionsMultiplier(1.0)
+            .defaultDeletionsMultiplier(0.2)
+            .fileMultipliers(List.of( //
+                    FileMultiplier.builder()
+                            .fileExtension(".java")
+                            .additionsMultiplier(3.0)
+                            .deletionsMultiplier(0.2)
+                            .build(), //
+                    FileMultiplier.builder()
+                            .fileExtension(".yaml")
+                            .additionsMultiplier(0.2)
+                            .deletionsMultiplier(0.1)
+                            .build() //
+            ))
+            .createdAt(OffsetDateTime.of(2024, 5, 13, 6, 0, 0, 0, ZoneOffset.UTC))
+            .build();
 
     private static final Developer DEVELOPER_FOO = Developer.builder()
             .login("foo")
@@ -43,6 +85,7 @@ class InMemoryPullRequestReviewRepositoryTest {
                             .build())))
             .score(20.7)
             .developer(DEVELOPER_FOO)
+            .multiplier(MULTIPLIER_1)
             .build();
 
     private static final PullRequestReview REVIEW_2 = PullRequestReview.builder()
@@ -61,6 +104,7 @@ class InMemoryPullRequestReviewRepositoryTest {
                             .build())))
             .score(60.1)
             .developer(DEVELOPER_FOO)
+            .multiplier(MULTIPLIER_1)
             .build();
 
     private static final PullRequestReview REVIEW_3 = PullRequestReview.builder()
@@ -74,6 +118,7 @@ class InMemoryPullRequestReviewRepositoryTest {
                             .build())))
             .score(7.0)
             .developer(DEVELOPER_BAR)
+            .multiplier(MULTIPLIER_2)
             .build();
 
     private static final PullRequestReview REVIEW_4 = PullRequestReview.builder()
@@ -87,6 +132,7 @@ class InMemoryPullRequestReviewRepositoryTest {
                             .build())))
             .score(7.0)
             .developer(DEVELOPER_FOO)
+            .multiplier(MULTIPLIER_2)
             .build();
 
     private PullRequestReviewRepository pullRequestReviewRepository = new InMemoryPullRequestReviewRepository();
@@ -174,6 +220,18 @@ class InMemoryPullRequestReviewRepositoryTest {
         Page<PullRequestReview> reviewsPage = pullRequestReviewRepository.getByDeveloperLogin(DEVELOPER_FOO.getLogin(),
                 pageable);
         Page<PullRequestReview> expectedReviewsPage = new PageImpl<>(List.of(REVIEW_1, REVIEW_2), pageable, 3);
+        assertEquals(expectedReviewsPage, reviewsPage);
+    }
+
+    @Test
+    void testGetWithDifferentMultiplierIds() {
+        List<PullRequestReview> reviews = List.of(REVIEW_1, REVIEW_2, REVIEW_3, REVIEW_4);
+        reviews.forEach(pullRequestReviewRepository::create);
+
+        Pageable pageable = PageRequest.of(0, 1);
+        Page<PullRequestReview> reviewsPage = pullRequestReviewRepository
+                .getWithDifferentMultiplierIds(MULTIPLIER_1.getId(), pageable);
+        Page<PullRequestReview> expectedReviewsPage = new PageImpl<>(List.of(REVIEW_3), pageable, 2);
         assertEquals(expectedReviewsPage, reviewsPage);
     }
 

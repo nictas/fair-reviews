@@ -47,6 +47,15 @@ public class InMemoryPullRequestReviewRepository implements PullRequestReviewRep
     }
 
     @Override
+    public Page<PullRequestReview> getWithDifferentMultiplierIds(UUID id, Pageable pageable) {
+        List<PullRequestReview> result = pullRequestReviews.stream()
+                .filter(review -> !id.equals(review.getMultiplier()
+                        .getId()))
+                .toList();
+        return PaginationUtils.applyPagination(result, pageable);
+    }
+
+    @Override
     public void create(PullRequestReview pullRequestReview) {
         pullRequestReviews.add(pullRequestReview);
     }
