@@ -27,10 +27,10 @@ import org.springframework.data.domain.Pageable;
 
 import com.nictas.reviews.domain.Developer;
 import com.nictas.reviews.domain.Multiplier;
+import com.nictas.reviews.domain.Multiplier.FileMultiplier;
 import com.nictas.reviews.domain.PullRequestFileDetails;
 import com.nictas.reviews.domain.PullRequestFileDetails.ChangedFile;
 import com.nictas.reviews.domain.PullRequestReview;
-import com.nictas.reviews.domain.Multiplier.FileMultiplier;
 import com.nictas.reviews.error.NotFoundException;
 import com.nictas.reviews.repository.PullRequestReviewRepository;
 import com.nictas.reviews.service.score.PullRequestScoreComputer;
@@ -197,6 +197,21 @@ class PullRequestReviewServiceTest {
 
         assertSame(reviewsPage, actualReviewsPage);
         verify(pullRequestReviewRepository, times(1)).getByDeveloperLogin(DEVELOPER_FOO.getLogin(), pageable);
+    }
+
+    @Test
+    void testGetReviewsWithDifferentMultiplierIds() {
+        List<PullRequestReview> reviews = List.of(REVIEW_1, REVIEW_2);
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<PullRequestReview> reviewsPage = new PageImpl<>(reviews, pageable, reviews.size());
+        when(pullRequestReviewRepository.getWithDifferentMultiplierIds(MULTIPLIER.getId(), pageable))
+                .thenReturn(reviewsPage);
+
+        Page<PullRequestReview> actualReviewsPage = pullRequestReviewService
+                .getReviewsWithDifferentMultiplierIds(MULTIPLIER.getId(), pageable);
+
+        assertSame(reviewsPage, actualReviewsPage);
+        verify(pullRequestReviewRepository, times(1)).getWithDifferentMultiplierIds(MULTIPLIER.getId(), pageable);
     }
 
     @Test

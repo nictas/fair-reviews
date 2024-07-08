@@ -48,8 +48,8 @@ public class PullRequestScoreComputer {
                 .build();
     }
 
-    private double computeScore(PullRequestFileDetails pullRequestInfo, Multiplier multiplier) {
-        return pullRequestInfo.getChangedFiles()
+    public double computeScore(PullRequestFileDetails pullRequestFileDetails, Multiplier multiplier) {
+        return pullRequestFileDetails.getChangedFiles()
                 .stream()
                 .mapToDouble(file -> computeScore(file, multiplier))
                 .sum();

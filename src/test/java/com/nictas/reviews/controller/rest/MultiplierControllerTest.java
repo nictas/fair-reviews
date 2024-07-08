@@ -2,15 +2,19 @@ package com.nictas.reviews.controller.rest;
 
 import static com.nictas.reviews.TestUtils.assertJsonsMatch;
 import static com.nictas.reviews.TestUtils.getResourceAsString;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -18,6 +22,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
+import org.springframework.scheduling.TaskScheduler;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
@@ -28,6 +33,7 @@ import com.nictas.reviews.domain.Multiplier;
 import com.nictas.reviews.domain.Multiplier.FileMultiplier;
 import com.nictas.reviews.error.NotFoundException;
 import com.nictas.reviews.service.MultiplierService;
+import com.nictas.reviews.service.scheduled.MultiplierApplierService;
 
 @WebMvcTest(MultiplierController.class)
 class MultiplierControllerTest {
@@ -82,6 +88,12 @@ class MultiplierControllerTest {
 
     @MockBean
     private MultiplierService multiplierService;
+
+    @MockBean
+    private MultiplierApplierService multiplierApplierService;
+
+    @MockBean
+    private TaskScheduler taskScheduler;
 
     @Test
     void testGetMultipliers() throws Exception {
@@ -200,6 +212,25 @@ class MultiplierControllerTest {
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.message")
                         .value(e.getMessage()));
+    }
+
+    @Test
+    void testApplyLatestMultiplier() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.post("/multipliers/latest/apply"))
+                .andExpect(MockMvcResultMatchers.status()
+                        .isAccepted());
+
+        ArgumentCaptor<Runnable> runnableCaptor = ArgumentCaptor.forClass(Runnable.class);
+        ArgumentCaptor<Instant> instantCaptor = ArgumentCaptor.forClass(Instant.class);
+        verify(taskScheduler).schedule(runnableCaptor.capture(), instantCaptor.capture());
+
+        Runnable runnable = runnableCaptor.getValue();
+        runnable.run();
+        verify(multiplierApplierService).applyLatestMultiplier();
+
+        Instant instant = instantCaptor.getValue();
+        Instant now = Instant.now();
+        assertTrue(instant.isBefore(now) || instant.equals(now));
     }
 
 }

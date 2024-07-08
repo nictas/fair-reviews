@@ -18,6 +18,8 @@ public interface PullRequestReviewRepository {
 
     Page<PullRequestReview> getByDeveloperLogin(String developerLogin, Pageable pageable);
 
+    Page<PullRequestReview> getWithDifferentMultiplierIds(UUID id, Pageable pageable);
+
     void create(PullRequestReview pullRequestReview);
 
     void update(PullRequestReview pullRequestReview);

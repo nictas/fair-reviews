@@ -56,6 +56,11 @@ public class PullRequestReviewService {
         return pullRequestReviewRepository.getByDeveloperLogin(developerLogin, pageable);
     }
 
+    public Page<PullRequestReview> getReviewsWithDifferentMultiplierIds(UUID id, Pageable pageable) {
+        log.info("Getting all pull request reviews with multiplier different than {}", id);
+        return pullRequestReviewRepository.getWithDifferentMultiplierIds(id, pageable);
+    }
+
     public void createReview(PullRequestReview pullRequestReview) {
         log.info("Creating pull request review: {}");
         pullRequestReviewRepository.create(pullRequestReview);
