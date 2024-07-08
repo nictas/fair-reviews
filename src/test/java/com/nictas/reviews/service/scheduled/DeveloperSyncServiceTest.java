@@ -51,18 +51,18 @@ class DeveloperSyncServiceTest {
 
         when(client.getDevelopers(DEVELOPERS_ORG, DEVELOPERS_TEAM))
                 .thenReturn(List.of(developerFoo, developerBar, developerBaz, developerQux));
-        when(developerRepository.get(developerFoo.getLogin())).thenReturn(Optional.empty());
-        when(developerRepository.get(developerBar.getLogin())).thenReturn(Optional.of(developerBar));
-        when(developerRepository.get(developerBaz.getLogin())).thenReturn(Optional.empty());
-        when(developerRepository.get(developerQux.getLogin())).thenReturn(Optional.of(developerQux));
+        when(developerRepository.findById(developerFoo.getLogin())).thenReturn(Optional.empty());
+        when(developerRepository.findById(developerBar.getLogin())).thenReturn(Optional.of(developerBar));
+        when(developerRepository.findById(developerBaz.getLogin())).thenReturn(Optional.empty());
+        when(developerRepository.findById(developerQux.getLogin())).thenReturn(Optional.of(developerQux));
 
         developerSyncService.fetchAndUpdateDevelopers();
 
-        verify(developerRepository).create(developerFoo.withScore(20.0));
-        verify(developerRepository).create(developerBaz.withScore(20.0));
-        verify(developerRepository, times(2)).create(any()); // Verify that no other developers were created
+        verify(developerRepository).save(developerFoo.withScore(20.0));
+        verify(developerRepository).save(developerBaz.withScore(20.0));
+        verify(developerRepository, times(2)).save(any()); // Verify that no other developers were created
     }
-    
+
     @Test
     void testAssignReviewerWithoutExistingDevelopers() {
         Developer developerFoo = new Developer("foo", "foo@example.com");
@@ -71,16 +71,16 @@ class DeveloperSyncServiceTest {
 
         when(client.getDevelopers(DEVELOPERS_ORG, DEVELOPERS_TEAM))
                 .thenReturn(List.of(developerFoo, developerBar, developerBaz));
-        when(developerRepository.get(developerFoo.getLogin())).thenReturn(Optional.empty());
-        when(developerRepository.get(developerBar.getLogin())).thenReturn(Optional.empty());
-        when(developerRepository.get(developerBaz.getLogin())).thenReturn(Optional.empty());
+        when(developerRepository.findById(developerFoo.getLogin())).thenReturn(Optional.empty());
+        when(developerRepository.findById(developerBar.getLogin())).thenReturn(Optional.empty());
+        when(developerRepository.findById(developerBaz.getLogin())).thenReturn(Optional.empty());
 
         developerSyncService.fetchAndUpdateDevelopers();
 
-        verify(developerRepository).create(developerFoo);
-        verify(developerRepository).create(developerBar);
-        verify(developerRepository).create(developerBaz);
-        verify(developerRepository, times(3)).create(any()); // Verify that no other developers were created
+        verify(developerRepository).save(developerFoo);
+        verify(developerRepository).save(developerBar);
+        verify(developerRepository).save(developerBaz);
+        verify(developerRepository, times(3)).save(any()); // Verify that no other developers were created
     }
 
 }

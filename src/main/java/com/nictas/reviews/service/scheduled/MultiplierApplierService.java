@@ -61,7 +61,7 @@ public class MultiplierApplierService {
                             .withMultiplier(latestMultiplier)
                             .withDeveloper(updatedDeveloper));
                     log.info("Applying score difference {} to developer: {}", scoreDifference, developer);
-                    developerService.updateDeveloper(updatedDeveloper);
+                    developerService.saveDeveloper(updatedDeveloper);
                 });
     }
 

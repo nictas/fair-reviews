@@ -58,7 +58,7 @@ public class DeveloperSyncService {
         List<Developer> existingDevelopers = new ArrayList<>();
         List<Developer> nonExistingDevelopers = new ArrayList<>();
         for (Developer developer : developers) {
-            var existingDeveloper = developerRepository.get(developer.getLogin());
+            var existingDeveloper = developerRepository.findById(developer.getLogin());
             if (existingDeveloper.isPresent()) {
                 existingDevelopers.add(existingDeveloper.get());
             } else {
@@ -80,7 +80,7 @@ public class DeveloperSyncService {
                 .map(developer -> developer.withScore(startingScore))
                 .forEach(developer -> {
                     log.info("Creating developer: {}", developer);
-                    developerRepository.create(developer);
+                    developerRepository.save(developer);
                 });
     }
 
