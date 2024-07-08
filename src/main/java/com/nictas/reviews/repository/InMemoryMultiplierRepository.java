@@ -39,15 +39,17 @@ public class InMemoryMultiplierRepository implements MultiplierRepository {
     }
 
     @Override
-    public void create(Multiplier multiplier) {
+    public Multiplier create(Multiplier multiplier) {
         multipliers.add(multiplier);
+        return multiplier;
     }
 
     @Override
-    public void update(Multiplier multiplier) {
+    public Multiplier update(Multiplier multiplier) {
         UUID id = multiplier.getId();
         multipliers.removeIf(candidate -> id.equals(candidate.getId()));
         multipliers.add(multiplier);
+        return multiplier;
     }
 
     @Override

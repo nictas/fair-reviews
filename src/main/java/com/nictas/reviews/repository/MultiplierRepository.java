@@ -16,9 +16,9 @@ public interface MultiplierRepository {
 
     Optional<Multiplier> getLatest();
 
-    void create(Multiplier multiplier);
+    Multiplier create(Multiplier multiplier);
 
-    void update(Multiplier multiplier);
+    Multiplier update(Multiplier multiplier);
 
     int delete(UUID id);
 

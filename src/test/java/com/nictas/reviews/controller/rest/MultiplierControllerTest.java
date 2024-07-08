@@ -3,7 +3,6 @@ package com.nictas.reviews.controller.rest;
 import static com.nictas.reviews.TestUtils.assertJsonsMatch;
 import static com.nictas.reviews.TestUtils.getResourceAsString;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.OffsetDateTime;
@@ -164,14 +163,20 @@ class MultiplierControllerTest {
 
     @Test
     void testCreateMultiplier() throws Exception {
+        when(multiplierService.createMultiplier(MULTIPLIER_1)).thenReturn(MULTIPLIER_1);
+
         String multiplierJson = objectMapper.writeValueAsString(MULTIPLIER_1);
-        mockMvc.perform(MockMvcRequestBuilders.post("/multipliers")
+        MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.post("/multipliers")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(multiplierJson))
                 .andExpect(MockMvcResultMatchers.status()
-                        .isCreated());
+                        .isCreated())
+                .andReturn();
 
-        verify(multiplierService).createMultiplier(MULTIPLIER_1);
+        String responseBody = mvcResult.getResponse()
+                .getContentAsString();
+        String expectedResponseBody = getResourceAsString(getClass(), "multiplier-response.json");
+        assertJsonsMatch(expectedResponseBody, responseBody);
     }
 
     @Test
