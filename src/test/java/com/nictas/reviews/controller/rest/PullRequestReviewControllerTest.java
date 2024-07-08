@@ -88,6 +88,18 @@ class PullRequestReviewControllerTest {
             .score(7.0)
             .developer(DEVELOPER_BAR)
             .build();
+    private static final PullRequestReview REVIEW_4 = PullRequestReview.builder()
+            .id(UUID.fromString("91a8bdeb-8457-4905-bd08-9d2a46f27b92"))
+            .pullRequestUrl("https://github.com/foo/bar/pull/87")
+            .pullRequestFileDetails(new PullRequestFileDetails(List.of(//
+                    ChangedFile.builder()
+                            .name("foo.java")
+                            .additions(15)
+                            .deletions(11)
+                            .build())))
+            .score(20.7)
+            .developer(DEVELOPER_BAR)
+            .build();
 
     @Autowired
     private MockMvc mockMvc;
@@ -190,7 +202,7 @@ class PullRequestReviewControllerTest {
         String requestBody = objectMapper.writeValueAsString(request);
 
         when(pullRequestReviewService.assign(request.getPullRequestUrl(), request.getAssigneeList(),
-                request.getAssigneeExclusionList())).thenReturn(List.of(DEVELOPER_FOO, DEVELOPER_BAR));
+                request.getAssigneeExclusionList())).thenReturn(List.of(REVIEW_1, REVIEW_4));
 
         MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.post("/reviews/assign")
                 .contentType(MediaType.APPLICATION_JSON)

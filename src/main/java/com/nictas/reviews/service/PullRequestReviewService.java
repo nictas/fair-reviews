@@ -73,8 +73,8 @@ public class PullRequestReviewService {
         pullRequestReviewRepository.delete(id);
     }
 
-    public List<Developer> assign(String pullRequestUrl, List<String> assigneeList,
-                                  List<String> assigneeExclusionList) {
+    public List<PullRequestReview> assign(String pullRequestUrl, List<String> assigneeList,
+                                          List<String> assigneeExclusionList) {
         log.info("Assigning pull request {} to a developer with assignee list {} and assignee exclusion list {}",
                 pullRequestUrl, assigneeList, assigneeExclusionList);
         List<String> previouslyAssignedDevelopers = getPreviouslyAssignedDeveloperLogins(pullRequestUrl);
@@ -84,12 +84,12 @@ public class PullRequestReviewService {
         return assignInternal(pullRequestUrl, assigneeList, assigneeExclusionList);
     }
 
-    private List<Developer> assignInternal(String pullRequestUrl, List<String> assigneeList,
-                                           List<String> assigneeExclusionList) {
+    private List<PullRequestReview> assignInternal(String pullRequestUrl, List<String> assigneeList,
+                                                   List<String> assigneeExclusionList) {
         List<Developer> assignees = getAssignees(assigneeList, assigneeExclusionList);
         PullRequestAssessment assessment = pullRequestScoreComputer.computeScore(pullRequestUrl);
         return assignees.stream()
-                .map(assignee -> increaseDeveloperScore(assignee, assessment))
+                .map(assignee -> createReview(assignee, assessment))
                 .toList();
     }
 
@@ -125,23 +125,23 @@ public class PullRequestReviewService {
                 .toList();
     }
 
-    private Developer increaseDeveloperScore(Developer developer, PullRequestAssessment assessment) {
+    private PullRequestReview createReview(Developer developer, PullRequestAssessment assessment) {
         Developer developerWithIncreasedScore = developer.withScore(developer.getScore() + assessment.getScore());
         developerService.updateDeveloper(developerWithIncreasedScore);
-        pullRequestReviewRepository.create(PullRequestReview.builder()
+        PullRequestReview pullRequestReview = PullRequestReview.builder()
                 .pullRequestUrl(assessment.getPullRequestUrl())
                 .pullRequestFileDetails(assessment.getPullRequestFileDetails())
                 .score(assessment.getScore())
                 .developer(developerWithIncreasedScore)
-                .build());
-        return developerWithIncreasedScore;
+                .build();
+        pullRequestReviewRepository.create(pullRequestReview);
+        return pullRequestReview;
     }
 
-    private Developer decreaseDeveloperScore(PullRequestReview review) {
+    private void decreaseDeveloperScore(PullRequestReview review) {
         Developer developer = review.getDeveloper();
         Developer developerWithDecreasedScore = developer.withScore(developer.getScore() - review.getScore());
         developerService.updateDeveloper(developerWithDecreasedScore);
-        return developerWithDecreasedScore;
     }
 
 }
