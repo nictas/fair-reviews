@@ -8,10 +8,12 @@ import java.util.UUID;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Component;
 
 import com.nictas.reviews.domain.Multiplier;
 import com.nictas.reviews.util.PaginationUtils;
 
+@Component
 public class InMemoryMultiplierRepository implements MultiplierRepository {
 
     private final List<Multiplier> multipliers = new ArrayList<>();
