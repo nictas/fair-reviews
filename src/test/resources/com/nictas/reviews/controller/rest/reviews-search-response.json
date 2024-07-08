@@ -2,6 +2,32 @@
    "content":[
       {
          "id":"91a8bdeb-8457-4905-bd08-9d2a46f27b92",
+         "developer":{
+            "login":"foo",
+            "email":"foo@example.com",
+            "score":80.8
+         },
+         "score":20.7,
+         "multiplier":{
+            "id":"2f7fc3e6-b54f-4593-aaca-98aeed3d6d02",
+            "defaultAdditionsMultiplier":1.0,
+            "defaultDeletionsMultiplier":0.2,
+            "fileMultipliers":[
+               {
+                  "id":"9672f226-c1a2-4b78-872f-f0558041e10d",
+                  "fileExtension":".java",
+                  "additionsMultiplier":2.0,
+                  "deletionsMultiplier":0.4
+               },
+               {
+                  "id":"428a6e1b-9d36-4478-96cb-591981fd7e4c",
+                  "fileExtension":".yaml",
+                  "additionsMultiplier":0.5,
+                  "deletionsMultiplier":0.2
+               }
+            ],
+            "createdAt":"2024-03-03T17:15:00Z"
+         },
          "pullRequestUrl":"https://github.com/foo/bar/pull/87",
          "pullRequestFileDetails":{
             "changedFiles":[
@@ -11,12 +37,6 @@
                   "deletions":11
                }
             ]
-         },
-         "score":20.7,
-         "developer":{
-            "login":"foo",
-            "email":"foo@example.com",
-            "score":80.8
          }
       }
    ],
@@ -24,24 +44,24 @@
       "pageNumber":0,
       "pageSize":20,
       "sort":{
+         "unsorted":true,
          "empty":true,
-         "sorted":false,
-         "unsorted":true
+         "sorted":false
       },
       "offset":0,
-      "unpaged":false,
-      "paged":true
+      "paged":true,
+      "unpaged":false
    },
-   "last":true,
    "totalPages":1,
    "totalElements":1,
+   "last":true,
    "first":true,
    "size":20,
    "number":0,
    "sort":{
+      "unsorted":true,
       "empty":true,
-      "sorted":false,
-      "unsorted":true
+      "sorted":false
    },
    "numberOfElements":1,
    "empty":false

@@ -129,6 +129,7 @@ public class PullRequestReviewService {
         Developer developerWithIncreasedScore = developer.withScore(developer.getScore() + assessment.getScore());
         developerService.updateDeveloper(developerWithIncreasedScore);
         PullRequestReview pullRequestReview = PullRequestReview.builder()
+                .multiplier(assessment.getMultiplier())
                 .pullRequestUrl(assessment.getPullRequestUrl())
                 .pullRequestFileDetails(assessment.getPullRequestFileDetails())
                 .score(assessment.getScore())

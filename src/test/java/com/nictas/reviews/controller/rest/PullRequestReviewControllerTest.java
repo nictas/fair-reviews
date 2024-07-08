@@ -5,6 +5,8 @@ import static com.nictas.reviews.TestUtils.getResourceAsString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -26,9 +28,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nictas.reviews.controller.rest.dto.PullRequestAssignRequest;
 import com.nictas.reviews.controller.rest.dto.PullRequestSearchRequest;
 import com.nictas.reviews.domain.Developer;
+import com.nictas.reviews.domain.Multiplier;
 import com.nictas.reviews.domain.PullRequestFileDetails;
 import com.nictas.reviews.domain.PullRequestFileDetails.ChangedFile;
 import com.nictas.reviews.domain.PullRequestReview;
+import com.nictas.reviews.domain.Multiplier.FileMultiplier;
 import com.nictas.reviews.error.NotFoundException;
 import com.nictas.reviews.service.PullRequestReviewService;
 
@@ -47,6 +51,27 @@ class PullRequestReviewControllerTest {
             .score(7.)
             .build();
 
+    private static final Multiplier MULTIPLIER = Multiplier.builder()
+            .id(UUID.fromString("2f7fc3e6-b54f-4593-aaca-98aeed3d6d02"))
+            .defaultAdditionsMultiplier(1.0)
+            .defaultDeletionsMultiplier(0.2)
+            .fileMultipliers(List.of( //
+                    FileMultiplier.builder()
+                            .id(UUID.fromString("9672f226-c1a2-4b78-872f-f0558041e10d"))
+                            .fileExtension(".java")
+                            .additionsMultiplier(2.0)
+                            .deletionsMultiplier(0.4)
+                            .build(), //
+                    FileMultiplier.builder()
+                            .id(UUID.fromString("428a6e1b-9d36-4478-96cb-591981fd7e4c"))
+                            .fileExtension(".yaml")
+                            .additionsMultiplier(0.5)
+                            .deletionsMultiplier(0.2)
+                            .build() //
+            ))
+            .createdAt(OffsetDateTime.of(2024, 3, 3, 17, 15, 0, 0, ZoneOffset.UTC))
+            .build();
+
     private static final PullRequestReview REVIEW_1 = PullRequestReview.builder()
             .id(UUID.fromString("91a8bdeb-8457-4905-bd08-9d2a46f27b92"))
             .pullRequestUrl("https://github.com/foo/bar/pull/87")
@@ -58,6 +83,7 @@ class PullRequestReviewControllerTest {
                             .build())))
             .score(20.7)
             .developer(DEVELOPER_FOO)
+            .multiplier(MULTIPLIER)
             .build();
     private static final PullRequestReview REVIEW_2 = PullRequestReview.builder()
             .id(UUID.fromString("dcb724e6-d2cb-4e63-a1ab-d5bc59e5cfdc"))
@@ -75,6 +101,7 @@ class PullRequestReviewControllerTest {
                             .build())))
             .score(60.1)
             .developer(DEVELOPER_FOO)
+            .multiplier(MULTIPLIER)
             .build();
     private static final PullRequestReview REVIEW_3 = PullRequestReview.builder()
             .id(UUID.fromString("ee2c8153-17a8-486f-93c1-78599eb7e5bf"))
@@ -87,6 +114,7 @@ class PullRequestReviewControllerTest {
                             .build())))
             .score(7.0)
             .developer(DEVELOPER_BAR)
+            .multiplier(MULTIPLIER)
             .build();
     private static final PullRequestReview REVIEW_4 = PullRequestReview.builder()
             .id(UUID.fromString("91a8bdeb-8457-4905-bd08-9d2a46f27b92"))
@@ -99,6 +127,7 @@ class PullRequestReviewControllerTest {
                             .build())))
             .score(20.7)
             .developer(DEVELOPER_BAR)
+            .multiplier(MULTIPLIER)
             .build();
 
     @Autowired
