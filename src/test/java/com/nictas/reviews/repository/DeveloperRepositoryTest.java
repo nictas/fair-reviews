@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +25,9 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import com.nictas.reviews.FairReviewsPostgreSQLContainer;
 import com.nictas.reviews.domain.Developer;
+import com.nictas.reviews.domain.PullRequestFileDetails;
+import com.nictas.reviews.domain.PullRequestFileDetails.ChangedFile;
+import com.nictas.reviews.domain.PullRequestReview;
 
 @Testcontainers
 @DataJpaTest
@@ -65,39 +69,41 @@ class DeveloperRepositoryTest {
             .score(3.3)
             .build();
 
-    // private static final PullRequestReview REVIEW_1 = PullRequestReview.builder()
-    // .id(UUID.fromString("91a8bdeb-8457-4905-bd08-9d2a46f27b92"))
-    // .pullRequestUrl("https://github.com/foo/bar/pull/87")
-    // .pullRequestFileDetails(new PullRequestFileDetails(List.of(//
-    // ChangedFile.builder()
-    // .name("foo.java")
-    // .additions(15)
-    // .deletions(11)
-    // .build())))
-    // .score(20.7)
-    // .developer(DEVELOPER_FOO)
-    // .build();
-    //
-    // private static final PullRequestReview REVIEW_2 = PullRequestReview.builder()
-    // .id(UUID.fromString("dcb724e6-d2cb-4e63-a1ab-d5bc59e5cfdc"))
-    // .pullRequestUrl("https://github.com/foo/bar/pull/90")
-    // .pullRequestFileDetails(new PullRequestFileDetails(List.of(//
-    // ChangedFile.builder()
-    // .name("foo.java")
-    // .additions(10)
-    // .deletions(22)
-    // .build(),
-    // ChangedFile.builder()
-    // .name("bar.java")
-    // .additions(1)
-    // .deletions(3)
-    // .build())))
-    // .score(60.1)
-    // .developer(DEVELOPER_FOO)
-    // .build();
+    private static final PullRequestReview REVIEW_1 = PullRequestReview.builder()
+            .id(UUID.fromString("91a8bdeb-8457-4905-bd08-9d2a46f27b92"))
+            .pullRequestUrl("https://github.com/foo/bar/pull/87")
+            .pullRequestFileDetails(new PullRequestFileDetails(List.of(//
+                    ChangedFile.builder()
+                            .name("foo.java")
+                            .additions(15)
+                            .deletions(11)
+                            .build())))
+            .score(20.7)
+            .developer(DEVELOPER_FOO)
+            .build();
+
+    private static final PullRequestReview REVIEW_2 = PullRequestReview.builder()
+            .id(UUID.fromString("dcb724e6-d2cb-4e63-a1ab-d5bc59e5cfdc"))
+            .pullRequestUrl("https://github.com/foo/bar/pull/90")
+            .pullRequestFileDetails(new PullRequestFileDetails(List.of(//
+                    ChangedFile.builder()
+                            .name("foo.java")
+                            .additions(10)
+                            .deletions(22)
+                            .build(),
+                    ChangedFile.builder()
+                            .name("bar.java")
+                            .additions(1)
+                            .deletions(3)
+                            .build())))
+            .score(60.1)
+            .developer(DEVELOPER_FOO)
+            .build();
 
     @Autowired
     private DeveloperRepository developerRepository;
+    @Autowired
+    private PullRequestReviewRepository pullRequestReviewRepository;
 
     @Test
     void testSaveAndFindById() {
@@ -174,24 +180,24 @@ class DeveloperRepositoryTest {
         assertEquals(88.8, developer.getScore());
     }
 
-    // TODO Uncomment and refactor once cascade deletion is implemented.
-    // @Test
-    // void testDelete() {
-    // developerRepository.create(DEVELOPER_FOO);
-    // List<PullRequestReview> reviews = List.of(REVIEW_1, REVIEW_2);
-    // Pageable pageable = Pageable.unpaged();
-    // when(pullRequestReviewRepository.getByDeveloperLogin(DEVELOPER_FOO.getLogin(), pageable))
-    // .thenReturn(new PageImpl<>(reviews, pageable, reviews.size()));
-    //
-    // int deleted = developerRepository.delete(DEVELOPER_FOO.getLogin());
-    // assertEquals(1, deleted);
-    //
-    // Optional<Developer> developer = developerRepository.get(DEVELOPER_FOO.getLogin());
-    // assertTrue(developer.isEmpty());
-    //
-    // verify(pullRequestReviewRepository).delete(REVIEW_1.getId());
-    // verify(pullRequestReviewRepository).delete(REVIEW_2.getId());
-    // verifyNoMoreInteractions(pullRequestReviewRepository);
-    // }
+    @Test
+    void testDeleteById() {
+        developerRepository.save(DEVELOPER_FOO);
+        pullRequestReviewRepository.save(REVIEW_1);
+        pullRequestReviewRepository.save(REVIEW_2);
+
+        Page<PullRequestReview> reviews = pullRequestReviewRepository.findByDeveloperLogin(DEVELOPER_FOO.getLogin(),
+                Pageable.unpaged());
+        assertEquals(2, reviews.getSize());
+
+        developerRepository.deleteById(DEVELOPER_FOO.getLogin());
+
+        Optional<Developer> developer = developerRepository.findById(DEVELOPER_FOO.getLogin());
+        assertTrue(developer.isEmpty());
+
+        Page<PullRequestReview> reviewsAfterDeletion = pullRequestReviewRepository
+                .findByDeveloperLogin(DEVELOPER_FOO.getLogin(), Pageable.unpaged());
+        assertEquals(0, reviewsAfterDeletion.getSize());
+    }
 
 }
