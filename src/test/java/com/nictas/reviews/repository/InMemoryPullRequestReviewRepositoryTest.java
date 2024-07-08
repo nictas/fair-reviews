@@ -101,7 +101,7 @@ class InMemoryPullRequestReviewRepositoryTest {
     }
 
     @Test
-    void testGetWithZeroDevelopers() {
+    void testGetWithZeroReviews() {
         Optional<PullRequestReview> review = pullRequestReviewRepository.get(REVIEW_1.getId());
         assertTrue(review.isEmpty());
     }
