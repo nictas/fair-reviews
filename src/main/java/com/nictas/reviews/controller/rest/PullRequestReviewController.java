@@ -17,9 +17,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.nictas.reviews.controller.rest.dto.PullRequestAssignRequest;
-import com.nictas.reviews.controller.rest.dto.PullRequestAssignResponse;
 import com.nictas.reviews.controller.rest.dto.PullRequestSearchRequest;
-import com.nictas.reviews.domain.Developer;
 import com.nictas.reviews.domain.PullRequestReview;
 import com.nictas.reviews.service.PullRequestReviewService;
 
@@ -50,10 +48,9 @@ public class PullRequestReviewController {
     }
 
     @PostMapping("/assign")
-    public PullRequestAssignResponse assign(@RequestBody PullRequestAssignRequest request) {
-        List<Developer> assignees = pullRequestService.assign(request.getPullRequestUrl(), request.getAssigneeList(),
+    public List<PullRequestReview> assign(@RequestBody PullRequestAssignRequest request) {
+        return pullRequestService.assign(request.getPullRequestUrl(), request.getAssigneeList(),
                 request.getAssigneeExclusionList());
-        return new PullRequestAssignResponse(assignees);
     }
 
     @DeleteMapping("/{id}")

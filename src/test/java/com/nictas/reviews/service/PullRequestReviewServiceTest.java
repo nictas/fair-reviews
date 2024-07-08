@@ -15,8 +15,6 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -101,9 +99,6 @@ class PullRequestReviewServiceTest {
 
     @Mock
     private PullRequestScoreComputer pullRequestScoreComputer;
-
-    @Captor
-    private ArgumentCaptor<PullRequestReview> pullRequestReviewCaptor;
 
     @InjectMocks
     private PullRequestReviewService pullRequestReviewService;
@@ -190,12 +185,16 @@ class PullRequestReviewServiceTest {
                 .thenReturn(new PullRequestAssessment(PR_URL, PR_FILE_DETAILS, PR_SCORE));
         when(pullRequestReviewRepository.getByUrl(PR_URL, Pageable.unpaged())).thenReturn(Page.empty());
 
-        List<Developer> assignees = pullRequestReviewService.assign(PR_URL, Collections.emptyList(),
+        List<PullRequestReview> reviews = pullRequestReviewService.assign(PR_URL, Collections.emptyList(),
                 loginExclusionList);
-        Developer expectedAssignee = DEVELOPER_FOO.withScore(PR_SCORE);
 
-        assertEquals(List.of(expectedAssignee), assignees);
+        assertEquals(1, reviews.size());
+        PullRequestReview review = reviews.get(0);
+
+        Developer expectedAssignee = DEVELOPER_FOO.withScore(PR_SCORE);
+        assertEquals(expectedAssignee, review.getDeveloper());
         verify(developerService).updateDeveloper(expectedAssignee);
+        verify(pullRequestReviewRepository).create(review);
     }
 
     @Test
@@ -206,14 +205,20 @@ class PullRequestReviewServiceTest {
                 .thenReturn(new PullRequestAssessment(PR_URL, PR_FILE_DETAILS, PR_SCORE));
         when(pullRequestReviewRepository.getByUrl(PR_URL, Pageable.unpaged())).thenReturn(Page.empty());
 
-        List<Developer> assignees = pullRequestReviewService.assign(PR_URL,
+        List<PullRequestReview> reviews = pullRequestReviewService.assign(PR_URL,
                 List.of(DEVELOPER_FOO.getLogin(), DEVELOPER_BAR.getLogin()), Collections.emptyList());
+        assertEquals(2, reviews.size());
+        PullRequestReview reviewOfFoo = reviews.get(0);
+        PullRequestReview reviewOfBar = reviews.get(1);
         Developer expectedAssigneeFoo = DEVELOPER_FOO.withScore(PR_SCORE);
         Developer expectedAssigneeBar = DEVELOPER_BAR.withScore(PR_SCORE);
 
-        assertEquals(List.of(expectedAssigneeFoo, expectedAssigneeBar), assignees);
+        assertEquals(expectedAssigneeFoo, reviewOfFoo.getDeveloper());
+        assertEquals(expectedAssigneeBar, reviewOfBar.getDeveloper());
         verify(developerService).updateDeveloper(expectedAssigneeFoo);
         verify(developerService).updateDeveloper(expectedAssigneeBar);
+        verify(pullRequestReviewRepository).create(reviewOfFoo);
+        verify(pullRequestReviewRepository).create(reviewOfBar);
     }
 
     @Test
@@ -224,12 +229,9 @@ class PullRequestReviewServiceTest {
                 .thenReturn(new PullRequestAssessment(PR_URL, PR_FILE_DETAILS, PR_SCORE));
         when(pullRequestReviewRepository.getByUrl(PR_URL, Pageable.unpaged())).thenReturn(Page.empty());
 
-        pullRequestReviewService.assign(PR_URL, List.of(DEVELOPER_FOO.getLogin(), DEVELOPER_BAR.getLogin()),
-                Collections.emptyList());
+        List<PullRequestReview> reviews = pullRequestReviewService.assign(PR_URL,
+                List.of(DEVELOPER_FOO.getLogin(), DEVELOPER_BAR.getLogin()), Collections.emptyList());
 
-        verify(pullRequestReviewRepository, times(2)).create(pullRequestReviewCaptor.capture());
-
-        List<PullRequestReview> reviews = pullRequestReviewCaptor.getAllValues();
         assertEquals(2, reviews.size());
         PullRequestReview reviewOfFoo = reviews.get(0);
         PullRequestReview reviewOfBar = reviews.get(1);
@@ -241,6 +243,9 @@ class PullRequestReviewServiceTest {
         assertEquals(PR_SCORE, reviewOfBar.getScore());
         assertEquals(DEVELOPER_FOO.withScore(PR_SCORE), reviewOfFoo.getDeveloper());
         assertEquals(DEVELOPER_BAR.withScore(PR_SCORE), reviewOfBar.getDeveloper());
+
+        verify(pullRequestReviewRepository).create(reviewOfFoo);
+        verify(pullRequestReviewRepository).create(reviewOfBar);
     }
 
     @Test
@@ -249,7 +254,7 @@ class PullRequestReviewServiceTest {
                 .thenReturn(DEVELOPER_BAZ);
         when(pullRequestScoreComputer.computeScore(PR_URL))
                 .thenReturn(new PullRequestAssessment(PR_URL, PR_FILE_DETAILS, PR_SCORE));
-        PullRequestReview review = PullRequestReview.builder()
+        PullRequestReview existingReview = PullRequestReview.builder()
                 .pullRequestUrl(PR_URL)
                 .pullRequestFileDetails(PR_FILE_DETAILS)
                 .score(PR_SCORE)
@@ -257,13 +262,16 @@ class PullRequestReviewServiceTest {
                 .build();
         Pageable pageable = Pageable.unpaged();
         when(pullRequestReviewRepository.getByUrl(PR_URL, pageable))
-                .thenReturn(new PageImpl<>(List.of(review), pageable, 1));
+                .thenReturn(new PageImpl<>(List.of(existingReview), pageable, 1));
 
-        List<Developer> assignees = pullRequestReviewService.assign(PR_URL, Collections.emptyList(),
+        List<PullRequestReview> reviews = pullRequestReviewService.assign(PR_URL, Collections.emptyList(),
                 List.of(DEVELOPER_BAR.getLogin()));
-        Developer expectedAssignee = DEVELOPER_BAZ.withScore(PR_SCORE);
 
-        assertEquals(List.of(expectedAssignee), assignees);
+        assertEquals(1, reviews.size());
+        PullRequestReview review = reviews.get(0);
+
+        Developer expectedAssignee = DEVELOPER_BAZ.withScore(PR_SCORE);
+        assertEquals(expectedAssignee, review.getDeveloper());
         verify(developerService).updateDeveloper(expectedAssignee);
     }
 
