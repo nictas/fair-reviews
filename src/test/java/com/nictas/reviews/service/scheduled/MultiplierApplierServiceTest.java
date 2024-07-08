@@ -22,6 +22,7 @@ import com.nictas.reviews.domain.Multiplier.FileMultiplier;
 import com.nictas.reviews.domain.PullRequestFileDetails;
 import com.nictas.reviews.domain.PullRequestFileDetails.ChangedFile;
 import com.nictas.reviews.domain.PullRequestReview;
+import com.nictas.reviews.service.DeveloperService;
 import com.nictas.reviews.service.MultiplierService;
 import com.nictas.reviews.service.PullRequestReviewService;
 import com.nictas.reviews.service.score.PullRequestScoreComputer;
@@ -78,7 +79,7 @@ class MultiplierApplierServiceTest {
                             .additions(15)
                             .deletions(11)
                             .build())))
-            .score(20.7)
+            .score(20.)
             .developer(DEVELOPER)
             .multiplier(MULTIPLIER_1)
             .build();
@@ -97,7 +98,7 @@ class MultiplierApplierServiceTest {
                             .additions(1)
                             .deletions(3)
                             .build())))
-            .score(60.1)
+            .score(60.)
             .developer(DEVELOPER)
             .multiplier(MULTIPLIER_1)
             .build();
@@ -108,6 +109,8 @@ class MultiplierApplierServiceTest {
     private PullRequestScoreComputer pullRequestScoreComputer;
     @Mock
     private PullRequestReviewService pullRequestReviewService;
+    @Mock
+    private DeveloperService developerService;
     @InjectMocks
     private MultiplierApplierService multiplierApplierService;
 
@@ -121,13 +124,20 @@ class MultiplierApplierServiceTest {
                 .thenReturn(100.);
         when(pullRequestScoreComputer.computeScore(REVIEW_2.getPullRequestFileDetails(), MULTIPLIER_2))
                 .thenReturn(200.);
+        when(developerService.getDeveloper(DEVELOPER.getLogin())).thenReturn(DEVELOPER);
 
         multiplierApplierService.applyLatestMultiplier();
 
+        Developer developerWithUpdatedScore1 = DEVELOPER.withScore(80.);
         verify(pullRequestReviewService).updateReview(REVIEW_1.withScore(100.)
-                .withMultiplier(MULTIPLIER_2));
+                .withMultiplier(MULTIPLIER_2)
+                .withDeveloper(developerWithUpdatedScore1));
+        verify(developerService).updateDeveloper(developerWithUpdatedScore1);
+        Developer developerWithUpdatedScore2 = DEVELOPER.withScore(140.);
         verify(pullRequestReviewService).updateReview(REVIEW_2.withScore(200.)
-                .withMultiplier(MULTIPLIER_2));
+                .withMultiplier(MULTIPLIER_2)
+                .withDeveloper(developerWithUpdatedScore2));
+        verify(developerService).updateDeveloper(developerWithUpdatedScore2);
     }
 
 }
