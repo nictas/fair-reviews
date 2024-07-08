@@ -2,6 +2,7 @@ package com.nictas.reviews.controller.rest.dto;
 
 import java.util.UUID;
 
+import com.nictas.reviews.domain.Multiplier;
 import com.nictas.reviews.domain.PullRequestFileDetails;
 import com.nictas.reviews.domain.PullRequestReview;
 
@@ -18,14 +19,17 @@ public class PullRequestReviewWithoutDeveloper {
 
     private final UUID id;
     private final String pullRequestUrl;
-    private final PullRequestFileDetails pullRequestFileDetails;
     private final double score;
+    private final PullRequestFileDetails pullRequestFileDetails;
+    private final Multiplier multiplier;
 
     public static PullRequestReviewWithoutDeveloper from(PullRequestReview review) {
         return PullRequestReviewWithoutDeveloper.builder()
                 .id(review.getId())
+                .score(review.getScore())
                 .pullRequestUrl(review.getPullRequestUrl())
                 .pullRequestFileDetails(review.getPullRequestFileDetails())
+                .multiplier(review.getMultiplier())
                 .build();
     }
 

@@ -136,8 +136,8 @@ public class PullRequestReviewService {
                 .score(assessment.getScore())
                 .developer(developerWithIncreasedScore)
                 .build();
-        pullRequestReviewRepository.save(pullRequestReview);
-        return pullRequestReview;
+        log.info("Saving PR review: " + pullRequestReview);
+        return pullRequestReviewRepository.save(pullRequestReview);
     }
 
     private void decreaseDeveloperScore(PullRequestReview review) {
