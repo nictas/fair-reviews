@@ -1,6 +1,6 @@
 package com.nictas.reviews.service;
 
-import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,7 +12,6 @@ import com.nictas.reviews.domain.Multiplier;
 import com.nictas.reviews.error.NotFoundException;
 import com.nictas.reviews.repository.MultiplierRepository;
 
-import jakarta.annotation.PostConstruct;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 
@@ -33,15 +32,6 @@ public class MultiplierService {
         this.repository = repository;
     }
 
-    @PostConstruct
-    @Transactional
-    public void saveDefaultMultiplier() {
-        List<Multiplier> multipliers = repository.findAll();
-        if (multipliers.isEmpty()) {
-            saveMultiplier(DEFAULT_MULTIPLIER);
-        }
-    }
-
     public Page<Multiplier> getAllMultipliers(Pageable pageable) {
         log.info("Getting all multipliers");
         return repository.findAll(pageable);
@@ -53,10 +43,14 @@ public class MultiplierService {
                 .orElseThrow(() -> new NotFoundException("Could not find multiplier with ID: " + id));
     }
 
+    @Transactional
     public Multiplier getLatestMultiplier() {
         log.info("Getting latest multiplier");
-        return repository.findLatest()
-                .orElseThrow(() -> new NotFoundException("Could not find latest multiplier"));
+        Optional<Multiplier> multiplier = repository.findLatest();
+        if (multiplier.isEmpty()) {
+            return saveMultiplier(DEFAULT_MULTIPLIER);
+        }
+        return multiplier.get();
     }
 
     public Multiplier saveMultiplier(Multiplier multiplier) {

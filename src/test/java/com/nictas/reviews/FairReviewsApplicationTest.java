@@ -13,13 +13,9 @@ import org.springframework.test.context.ContextConfiguration;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import com.nictas.reviews.domain.Multiplier;
-import com.nictas.reviews.service.MultiplierService;
 import com.nictas.reviews.service.github.settings.GitHubSettings;
 import com.nictas.reviews.service.github.settings.GitHubSettingsProvider;
 import com.nictas.reviews.service.scheduled.DeveloperSyncService;
-
-import jakarta.transaction.Transactional;
 
 @Testcontainers
 @SpringBootTest
@@ -47,8 +43,6 @@ class FairReviewsApplicationTest {
 
     @Autowired
     private GitHubSettingsProvider settingsProvider;
-    @Autowired
-    private MultiplierService multiplierService;
 
     @MockBean
     private DeveloperSyncService developerSyncService;
@@ -64,14 +58,6 @@ class FairReviewsApplicationTest {
         assertEquals(SETTINGS_BAR_URL, settingsBar.getUrl());
         assertEquals(SETTINGS_BAR_URL + "/api/v3", settingsBar.getApi());
         assertEquals("tokenBar", settingsBar.getToken());
-    }
-
-    @Test
-    @Transactional
-    void defaultMultiplierIsSaved() {
-        Multiplier multiplier = multiplierService.getMultiplier(MultiplierService.DEFAULT_MULTIPLIER.getId());
-
-        assertEquals(MultiplierService.DEFAULT_MULTIPLIER, multiplier);
     }
 
 }

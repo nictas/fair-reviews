@@ -125,6 +125,17 @@ class MultiplierServiceTest {
     }
 
     @Test
+    void testGetLatestMultiplierWithNoMultipliers() {
+        when(multiplierRepository.findLatest()).thenReturn(Optional.empty());
+        when(multiplierRepository.save(MultiplierService.DEFAULT_MULTIPLIER))
+                .thenReturn(MultiplierService.DEFAULT_MULTIPLIER);
+
+        Multiplier multiplier = multiplierService.getLatestMultiplier();
+
+        assertSame(MultiplierService.DEFAULT_MULTIPLIER, multiplier);
+    }
+
+    @Test
     void testDeleteDeveloper() {
         UUID id = MULTIPLIER_1.getId();
         when(multiplierRepository.findById(id)).thenReturn(Optional.of(MULTIPLIER_1));

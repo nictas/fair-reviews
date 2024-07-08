@@ -5,10 +5,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
-import jakarta.persistence.CascadeType;
+import org.hibernate.annotations.Type;
+
+import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -33,7 +35,8 @@ public class Multiplier {
     private double defaultAdditionsMultiplier;
     private double defaultDeletionsMultiplier;
     @Builder.Default
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @Type(JsonBinaryType.class)
+    @Column(columnDefinition = "jsonb")
     private List<FileMultiplier> fileMultipliers = Collections.emptyList();
     @Builder.Default
     @EqualsAndHashCode.Exclude

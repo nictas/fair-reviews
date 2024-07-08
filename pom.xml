@@ -51,6 +51,11 @@
             <groupId>com.fasterxml.jackson.module</groupId>
             <artifactId>jackson-module-jakarta-xmlbind-annotations</artifactId>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/org.liquibase/liquibase-core -->
+        <dependency>
+            <groupId>org.liquibase</groupId>
+            <artifactId>liquibase-core</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>org.projectlombok</groupId>

@@ -2,8 +2,6 @@ package com.nictas.reviews.domain;
 
 import java.util.UUID;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -18,18 +16,12 @@ import lombok.extern.jackson.Jacksonized;
 @Builder
 @Jacksonized
 @AllArgsConstructor
-@Entity
 public class FileMultiplier {
 
     @Builder.Default
-    @Id
     private UUID id = UUID.randomUUID();
     private String fileExtension;
     private double additionsMultiplier;
     private double deletionsMultiplier;
-
-    protected FileMultiplier() {
-        // Required by JPA.
-    }
 
 }
