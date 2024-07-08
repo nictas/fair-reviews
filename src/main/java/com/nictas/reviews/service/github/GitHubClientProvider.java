@@ -3,7 +3,7 @@ package com.nictas.reviews.service.github;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 
 import org.kohsuke.github.GitHub;
 import org.kohsuke.github.GitHubBuilder;
@@ -20,7 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 public class GitHubClientProvider {
 
     private final GitHubSettingsProvider settingsProvider;
-    private final Function<GitHubSettings, GitHub> delegateConstructor;
+    private final BiFunction<String, String, GitHub> delegateConstructor;
     private final Map<String, GitHubClient> clientCache;
 
     @Autowired
@@ -29,7 +29,7 @@ public class GitHubClientProvider {
     }
 
     GitHubClientProvider(GitHubSettingsProvider settingsProvider,
-                         Function<GitHubSettings, GitHub> delegateConstructor) {
+                         BiFunction<String, String, GitHub> delegateConstructor) {
         this.settingsProvider = settingsProvider;
         this.delegateConstructor = delegateConstructor;
         this.clientCache = new HashMap<>();
@@ -38,21 +38,28 @@ public class GitHubClientProvider {
     public GitHubClient getClientForUrl(String url) {
         GitHubSettings settings = settingsProvider.getSettingsForUrl(url);
         log.info("Received settings for URL: {}", settings);
-        return clientCache.computeIfAbsent(settings.getUrl(), unused -> createClient(settings));
+        return clientCache.computeIfAbsent(settings.getUrl(),
+                unused -> createClient(settings.getApi(), settings.getToken()));
     }
 
-    private GitHubClient createClient(GitHubSettings settings) {
-        log.info("Creating GitHub client for URL {} with settings: {}", settings.getUrl(), settings);
-        return new GitHubClient(delegateConstructor.apply(settings));
+    public GitHubClient getClientForUrl(String url, String token) {
+        GitHubSettings settings = settingsProvider.getSettingsForUrl(url);
+        log.info("Received settings for URL: {}", settings);
+        return createClient(settings.getApi(), token);
     }
 
-    private static GitHub createDelegate(GitHubSettings settings) {
+    private GitHubClient createClient(String apiUrl, String token) {
+        log.info("Creating GitHub client for URL: {}", apiUrl);
+        return new GitHubClient(delegateConstructor.apply(apiUrl, token));
+    }
+
+    private static GitHub createDelegate(String apiUrl, String token) {
         try {
-            return new GitHubBuilder().withEndpoint(settings.getApi())
-                    .withOAuthToken(settings.getToken())
+            return new GitHubBuilder().withEndpoint(apiUrl)
+                    .withOAuthToken(token)
                     .build();
         } catch (IOException e) {
-            throw new IllegalStateException("Unable to create GitHub client for URL: " + settings.getUrl());
+            throw new IllegalStateException("Unable to create GitHub client for URL: " + apiUrl);
         }
     }
 

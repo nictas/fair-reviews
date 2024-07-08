@@ -18,17 +18,21 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.scheduling.TaskScheduler;
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nictas.reviews.configuration.GitHubOpaqueTokenIntrospector;
+import com.nictas.reviews.configuration.SecurityConfiguration;
 import com.nictas.reviews.domain.FileMultiplier;
 import com.nictas.reviews.domain.Multiplier;
 import com.nictas.reviews.error.NotFoundException;
@@ -36,6 +40,7 @@ import com.nictas.reviews.service.MultiplierService;
 import com.nictas.reviews.service.scheduled.MultiplierApplierService;
 
 @WebMvcTest(MultiplierController.class)
+@Import(SecurityConfiguration.class)
 class MultiplierControllerTest {
 
     private static final Multiplier MULTIPLIER_1 = Multiplier.builder()
@@ -95,6 +100,9 @@ class MultiplierControllerTest {
     @MockBean
     private TaskScheduler taskScheduler;
 
+    @MockBean
+    private GitHubOpaqueTokenIntrospector introspector;
+
     @Test
     void testGetMultipliers() throws Exception {
         List<Multiplier> multipliers = List.of(MULTIPLIER_1, MULTIPLIER_2);
@@ -102,7 +110,9 @@ class MultiplierControllerTest {
         when(multiplierService.getAllMultipliers(pageable))
                 .thenReturn(new PageImpl<>(multipliers, pageable, multipliers.size()));
 
-        MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/multipliers"))
+        MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/multipliers")
+                .with(SecurityMockMvcRequestPostProcessors.opaqueToken()
+                        .authorities(ControllerTestData.AUTHORITIES_USER)))
                 .andExpect(MockMvcResultMatchers.status()
                         .isOk())
                 .andReturn();
@@ -114,11 +124,20 @@ class MultiplierControllerTest {
     }
 
     @Test
+    void testGetMultipliersUnauthorized() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.get("/multipliers"))
+                .andExpect(MockMvcResultMatchers.status()
+                        .isUnauthorized());
+    }
+
+    @Test
     void testGetMultiplier() throws Exception {
         when(multiplierService.getMultiplier(MULTIPLIER_1.getId())).thenReturn(MULTIPLIER_1);
 
         MvcResult mvcResult = mockMvc
-                .perform(MockMvcRequestBuilders.get("/multipliers/2f7fc3e6-b54f-4593-aaca-98aeed3d6d02"))
+                .perform(MockMvcRequestBuilders.get("/multipliers/2f7fc3e6-b54f-4593-aaca-98aeed3d6d02")
+                        .with(SecurityMockMvcRequestPostProcessors.opaqueToken()
+                                .authorities(ControllerTestData.AUTHORITIES_USER)))
                 .andExpect(MockMvcResultMatchers.status()
                         .isOk())
                 .andReturn();
@@ -135,7 +154,9 @@ class MultiplierControllerTest {
                 "Could not find multiplier with ID: 2f7fc3e6-b54f-4593-aaca-98aeed3d6d02");
         when(multiplierService.getMultiplier(MULTIPLIER_1.getId())).thenThrow(e);
 
-        mockMvc.perform(MockMvcRequestBuilders.get("/multipliers/2f7fc3e6-b54f-4593-aaca-98aeed3d6d02"))
+        mockMvc.perform(MockMvcRequestBuilders.get("/multipliers/2f7fc3e6-b54f-4593-aaca-98aeed3d6d02")
+                .with(SecurityMockMvcRequestPostProcessors.opaqueToken()
+                        .authorities(ControllerTestData.AUTHORITIES_USER)))
                 .andExpect(MockMvcResultMatchers.status()
                         .isNotFound())
                 .andExpect(MockMvcResultMatchers.content()
@@ -149,7 +170,9 @@ class MultiplierControllerTest {
         Exception e = new IllegalStateException("Unable to connect to DB");
         when(multiplierService.getMultiplier(MULTIPLIER_1.getId())).thenThrow(e);
 
-        mockMvc.perform(MockMvcRequestBuilders.get("/multipliers/2f7fc3e6-b54f-4593-aaca-98aeed3d6d02"))
+        mockMvc.perform(MockMvcRequestBuilders.get("/multipliers/2f7fc3e6-b54f-4593-aaca-98aeed3d6d02")
+                .with(SecurityMockMvcRequestPostProcessors.opaqueToken()
+                        .authorities(ControllerTestData.AUTHORITIES_USER)))
                 .andExpect(MockMvcResultMatchers.status()
                         .is(500))
                 .andExpect(MockMvcResultMatchers.content()
@@ -162,7 +185,9 @@ class MultiplierControllerTest {
     void testGetLatestMultiplier() throws Exception {
         when(multiplierService.getLatestMultiplier()).thenReturn(MULTIPLIER_1);
 
-        MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/multipliers/latest"))
+        MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/multipliers/latest")
+                .with(SecurityMockMvcRequestPostProcessors.opaqueToken()
+                        .authorities(ControllerTestData.AUTHORITIES_USER)))
                 .andExpect(MockMvcResultMatchers.status()
                         .isOk())
                 .andReturn();
@@ -180,7 +205,9 @@ class MultiplierControllerTest {
         String multiplierJson = objectMapper.writeValueAsString(MULTIPLIER_1);
         MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.post("/multipliers")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(multiplierJson))
+                .content(multiplierJson)
+                .with(SecurityMockMvcRequestPostProcessors.opaqueToken()
+                        .authorities(ControllerTestData.AUTHORITIES_ADMIN)))
                 .andExpect(MockMvcResultMatchers.status()
                         .isCreated())
                 .andReturn();
@@ -192,10 +219,33 @@ class MultiplierControllerTest {
     }
 
     @Test
+    void testCreateMultiplierForbidden() throws Exception {
+        String multiplierJson = objectMapper.writeValueAsString(MULTIPLIER_1);
+        mockMvc.perform(MockMvcRequestBuilders.post("/multipliers")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(multiplierJson)
+                .with(SecurityMockMvcRequestPostProcessors.opaqueToken()
+                        .authorities(ControllerTestData.AUTHORITIES_USER)))
+                .andExpect(MockMvcResultMatchers.status()
+                        .isForbidden());
+    }
+
+    @Test
     void testDeleteMultiplier() throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.delete("/multipliers/2f7fc3e6-b54f-4593-aaca-98aeed3d6d02"))
+        mockMvc.perform(MockMvcRequestBuilders.delete("/multipliers/2f7fc3e6-b54f-4593-aaca-98aeed3d6d02")
+                .with(SecurityMockMvcRequestPostProcessors.opaqueToken()
+                        .authorities(ControllerTestData.AUTHORITIES_ADMIN)))
                 .andExpect(MockMvcResultMatchers.status()
                         .isNoContent());
+    }
+
+    @Test
+    void testDeleteMultiplierForbidden() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.delete("/multipliers/2f7fc3e6-b54f-4593-aaca-98aeed3d6d02")
+                .with(SecurityMockMvcRequestPostProcessors.opaqueToken()
+                        .authorities(ControllerTestData.AUTHORITIES_USER)))
+                .andExpect(MockMvcResultMatchers.status()
+                        .isForbidden());
     }
 
     @Test
@@ -205,7 +255,9 @@ class MultiplierControllerTest {
         doThrow(e).when(multiplierService)
                 .deleteMultiplier(MULTIPLIER_1.getId());
 
-        mockMvc.perform(MockMvcRequestBuilders.delete("/multipliers/2f7fc3e6-b54f-4593-aaca-98aeed3d6d02"))
+        mockMvc.perform(MockMvcRequestBuilders.delete("/multipliers/2f7fc3e6-b54f-4593-aaca-98aeed3d6d02")
+                .with(SecurityMockMvcRequestPostProcessors.opaqueToken()
+                        .authorities(ControllerTestData.AUTHORITIES_ADMIN)))
                 .andExpect(MockMvcResultMatchers.status()
                         .isNotFound())
                 .andExpect(MockMvcResultMatchers.content()
@@ -216,7 +268,9 @@ class MultiplierControllerTest {
 
     @Test
     void testApplyLatestMultiplier() throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.post("/multipliers/latest/apply"))
+        mockMvc.perform(MockMvcRequestBuilders.post("/multipliers/latest/apply")
+                .with(SecurityMockMvcRequestPostProcessors.opaqueToken()
+                        .authorities(ControllerTestData.AUTHORITIES_ADMIN)))
                 .andExpect(MockMvcResultMatchers.status()
                         .isAccepted());
 
@@ -231,6 +285,15 @@ class MultiplierControllerTest {
         Instant instant = instantCaptor.getValue();
         Instant now = Instant.now();
         assertTrue(instant.isBefore(now) || instant.equals(now));
+    }
+
+    @Test
+    void testApplyLatestMultiplierForbidden() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.post("/multipliers/latest/apply")
+                .with(SecurityMockMvcRequestPostProcessors.opaqueToken()
+                        .authorities(ControllerTestData.AUTHORITIES_USER)))
+                .andExpect(MockMvcResultMatchers.status()
+                        .isForbidden());
     }
 
 }

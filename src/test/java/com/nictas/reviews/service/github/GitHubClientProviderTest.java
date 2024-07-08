@@ -1,11 +1,10 @@
 package com.nictas.reviews.service.github;
 
 import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.function.Function;
+import java.util.function.BiFunction;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,7 +31,7 @@ class GitHubClientProviderTest {
     @Mock
     private GitHub delegateBar;
     @Mock
-    private Function<GitHubSettings, GitHub> delegateConstructor;
+    private BiFunction<String, String, GitHub> delegateConstructor;
     @InjectMocks
     private GitHubClientProvider clientProvider;
 
@@ -40,22 +39,22 @@ class GitHubClientProviderTest {
     void testGetClientForUrl() {
         when(settingsProvider.getSettingsForUrl(SETTINGS_FOO.getUrl())).thenReturn(SETTINGS_FOO);
         when(settingsProvider.getSettingsForUrl(SETTINGS_BAR.getUrl())).thenReturn(SETTINGS_BAR);
-        when(delegateConstructor.apply(SETTINGS_FOO)).thenReturn(delegateFoo);
-        when(delegateConstructor.apply(SETTINGS_BAR)).thenReturn(delegateBar);
+        when(delegateConstructor.apply(SETTINGS_FOO.getApi(), SETTINGS_FOO.getToken())).thenReturn(delegateFoo);
+        when(delegateConstructor.apply(SETTINGS_BAR.getApi(), SETTINGS_BAR.getToken())).thenReturn(delegateBar);
 
         GitHubClient clientFoo = clientProvider.getClientForUrl(SETTINGS_FOO.getUrl());
         assertSame(delegateFoo, clientFoo.getDelegate());
         GitHubClient clientBar = clientProvider.getClientForUrl(SETTINGS_BAR.getUrl());
         assertSame(delegateBar, clientBar.getDelegate());
 
-        verify(delegateConstructor, times(1)).apply(SETTINGS_FOO);
-        verify(delegateConstructor, times(1)).apply(SETTINGS_BAR);
+        verify(delegateConstructor).apply(SETTINGS_FOO.getApi(), SETTINGS_FOO.getToken());
+        verify(delegateConstructor).apply(SETTINGS_BAR.getApi(), SETTINGS_BAR.getToken());
     }
 
     @Test
     void testGetClientForUrlCaching() {
         when(settingsProvider.getSettingsForUrl(SETTINGS_FOO.getUrl())).thenReturn(SETTINGS_FOO);
-        when(delegateConstructor.apply(SETTINGS_FOO)).thenReturn(delegateFoo);
+        when(delegateConstructor.apply(SETTINGS_FOO.getApi(), SETTINGS_FOO.getToken())).thenReturn(delegateFoo);
 
         GitHubClient clientFoo1 = clientProvider.getClientForUrl(SETTINGS_FOO.getUrl());
         // Get the same client a few more times to check whether the caching is working
@@ -66,7 +65,19 @@ class GitHubClientProviderTest {
         assertSame(clientFoo2, clientFoo3);
         assertSame(clientFoo3, clientFoo4);
 
-        verify(delegateConstructor, times(1)).apply(SETTINGS_FOO);
+        verify(delegateConstructor).apply(SETTINGS_FOO.getApi(), SETTINGS_FOO.getToken());
+    }
+
+    @Test
+    void testGetClientForUrlWithToken() {
+        String token = "test";
+        when(settingsProvider.getSettingsForUrl(SETTINGS_FOO.getUrl())).thenReturn(SETTINGS_FOO);
+        when(delegateConstructor.apply(SETTINGS_FOO.getApi(), token)).thenReturn(delegateFoo);
+
+        GitHubClient clientFoo = clientProvider.getClientForUrl(SETTINGS_FOO.getUrl(), token);
+        assertSame(delegateFoo, clientFoo.getDelegate());
+
+        verify(delegateConstructor).apply(SETTINGS_FOO.getApi(), token);
     }
 
 }

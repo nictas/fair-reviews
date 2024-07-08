@@ -11,6 +11,7 @@ import java.util.List;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.kohsuke.github.GHMyself;
 import org.kohsuke.github.GHOrganization;
 import org.kohsuke.github.GHPullRequest;
 import org.kohsuke.github.GHPullRequestFileDetail;
@@ -87,7 +88,7 @@ class GitHubClientTest {
         void testGetDevelopersWithNonExistingTeam() throws IOException {
             when(delegate.getOrganization(ORGANIZATION_NAME)).thenReturn(organization);
 
-            IllegalStateException exception = assertThrows(IllegalStateException.class,
+            Exception exception = assertThrows(GitHubClientException.class,
                     () -> client.getDevelopers(ORGANIZATION_NAME, TEAM_NAME));
             assertEquals(String.format("Unable to find team %s in organization: %s", TEAM_NAME, ORGANIZATION_NAME),
                     exception.getMessage());
@@ -97,7 +98,7 @@ class GitHubClientTest {
         void testGetDevelopersWithConnectionError() throws IOException {
             when(delegate.getOrganization(ORGANIZATION_NAME)).thenThrow(new IOException("Connection error"));
 
-            IllegalStateException exception = assertThrows(IllegalStateException.class,
+            Exception exception = assertThrows(GitHubClientException.class,
                     () -> client.getDevelopers(ORGANIZATION_NAME, TEAM_NAME));
             assertEquals(String.format(
                     "Error while fetching GitHub users from organization %s and team %s: Connection error",
@@ -113,7 +114,7 @@ class GitHubClientTest {
             when(userFoo.getLogin()).thenReturn(USER_FOO_LOGIN);
             when(userFoo.getEmail()).thenThrow(new IOException("Connection error"));
 
-            IllegalStateException exception = assertThrows(IllegalStateException.class,
+            Exception exception = assertThrows(GitHubClientException.class,
                     () -> client.getDevelopers(ORGANIZATION_NAME, TEAM_NAME));
             assertEquals(String.format("Error while fetching email of user %s: %s", USER_FOO_LOGIN, "Connection error"),
                     exception.getMessage());
@@ -170,9 +171,9 @@ class GitHubClientTest {
             when(fileDetailBar.getFilename()).thenReturn(BAR_FILE_NAME);
             when(fileDetailBar.getAdditions()).thenReturn(BAR_ADDITIONS);
             when(fileDetailBar.getDeletions()).thenReturn(BAR_DELETIONS);
-            PullRequest pullRequest = new PullRequest(OWNER, REPOSITORY, PR_NUMBER);
+            PullRequest pullRequestFragments = new PullRequest(OWNER, REPOSITORY, PR_NUMBER);
 
-            PullRequestFileDetails pullRequestInfo = gitHubClient.getPullRequestInfo(pullRequest);
+            PullRequestFileDetails pullRequestInfo = gitHubClient.getPullRequestInfo(pullRequestFragments);
             PullRequestFileDetails expectedPullRequestInfo = new PullRequestFileDetails(List.of(//
                     ChangedFile.builder()
                             .name(FOO_FILE_NAME)
@@ -189,13 +190,135 @@ class GitHubClientTest {
 
         @Test
         void testGetPullRequestInfoWithConnectionError() throws IOException {
-            PullRequest pullRequest = new PullRequest(OWNER, REPOSITORY, PR_NUMBER);
+            PullRequest pullRequestFragments = new PullRequest(OWNER, REPOSITORY, PR_NUMBER);
             when(delegate.getRepository(String.format("%s/%s", OWNER, REPOSITORY)))
                     .thenThrow(new IOException("Connection error"));
 
-            IllegalStateException exception = assertThrows(IllegalStateException.class,
-                    () -> gitHubClient.getPullRequestInfo(pullRequest));
+            Exception exception = assertThrows(GitHubClientException.class,
+                    () -> gitHubClient.getPullRequestInfo(pullRequestFragments));
             assertEquals("Error while fetching info for PR baz/qux/123: Connection error", exception.getMessage());
+        }
+
+    }
+
+    @Nested
+    class GetOrganizationAdminsTests {
+
+        private static final String ORGANIZATION_NAME = "baz";
+        private static final String USER_FOO_LOGIN = "foo";
+        private static final String USER_BAR_LOGIN = "bar";
+        private static final String USER_FOO_EMAIL = "foo@example.com";
+        private static final String USER_BAR_EMAIL = "bar@example.com";
+
+        @Mock
+        private GitHub delegate;
+
+        @Mock
+        private GHOrganization organization;
+
+        @Mock
+        private PagedIterable<GHUser> userIterable;
+
+        @Mock
+        private GHUser userFoo;
+
+        @Mock
+        private GHUser userBar;
+
+        @InjectMocks
+        private GitHubClient client;
+
+        @Test
+        void testGetOrganizationAdmins() throws IOException {
+            when(delegate.getOrganization(ORGANIZATION_NAME)).thenReturn(organization);
+            when(organization.listMembersWithRole(GitHubClient.ORGANIZATION_ROLE_ADMIN)).thenReturn(userIterable);
+            when(userIterable.toList()).thenReturn(List.of(userFoo, userBar));
+
+            when(userFoo.getLogin()).thenReturn(USER_FOO_LOGIN);
+            when(userFoo.getEmail()).thenReturn(USER_FOO_EMAIL);
+
+            when(userBar.getLogin()).thenReturn(USER_BAR_LOGIN);
+            when(userBar.getEmail()).thenReturn(USER_BAR_EMAIL);
+
+            List<Developer> developers = client.getOrganizationAdmins(ORGANIZATION_NAME);
+            List<Developer> expectedDevelopers = List.of(new Developer(USER_FOO_LOGIN, USER_FOO_EMAIL),
+                    new Developer(USER_BAR_LOGIN, USER_BAR_EMAIL));
+
+            assertEquals(expectedDevelopers, developers);
+        }
+
+        @Test
+        void testGetOrganizationAdminsWithConnectionError() throws IOException {
+            when(delegate.getOrganization(ORGANIZATION_NAME)).thenThrow(new IOException("Connection error"));
+
+            Exception exception = assertThrows(GitHubClientException.class,
+                    () -> client.getOrganizationAdmins(ORGANIZATION_NAME));
+            assertEquals(String.format("Error while fetching GitHub users from organization %s: Connection error",
+                    ORGANIZATION_NAME), exception.getMessage());
+        }
+
+        @Test
+        void testGetOrganizationAdminsWithConnectionErrorWhenFetchingEmails() throws IOException {
+            when(delegate.getOrganization(ORGANIZATION_NAME)).thenReturn(organization);
+            when(organization.listMembersWithRole(GitHubClient.ORGANIZATION_ROLE_ADMIN)).thenReturn(userIterable);
+            when(userIterable.toList()).thenReturn(List.of(userFoo, userBar));
+            when(userFoo.getLogin()).thenReturn(USER_FOO_LOGIN);
+            when(userFoo.getEmail()).thenThrow(new IOException("Connection error"));
+
+            Exception exception = assertThrows(GitHubClientException.class,
+                    () -> client.getOrganizationAdmins(ORGANIZATION_NAME));
+            assertEquals(String.format("Error while fetching email of user %s: %s", USER_FOO_LOGIN, "Connection error"),
+                    exception.getMessage());
+        }
+
+    }
+
+    @Nested
+    class GetMyselfTests {
+
+        private static final String USER_FOO_LOGIN = "foo";
+        private static final String USER_FOO_EMAIL = "foo@example.com";
+
+        @Mock
+        private GitHub delegate;
+
+        @Mock
+        private GHMyself myself;
+
+        @InjectMocks
+        private GitHubClient client;
+
+        @Test
+        void testGetMyself() throws IOException {
+            when(delegate.getMyself()).thenReturn(myself);
+
+            when(myself.getLogin()).thenReturn(USER_FOO_LOGIN);
+            when(myself.getEmail()).thenReturn(USER_FOO_EMAIL);
+
+            Developer developer = client.getMyself();
+            Developer expectedDeveloper = new Developer(USER_FOO_LOGIN, USER_FOO_EMAIL);
+
+            assertEquals(expectedDeveloper, developer);
+        }
+
+        @Test
+        void testGetMyselfWithConnectionError() throws IOException {
+            when(delegate.getMyself()).thenThrow(new IOException("Connection error"));
+
+            Exception exception = assertThrows(GitHubClientException.class, () -> client.getMyself());
+            assertEquals("Error while fetching GitHub user: Connection error", exception.getMessage());
+        }
+
+        @Test
+        void testGetMyselfWithConnectionErrorWhenFetchingEmails() throws IOException {
+            when(delegate.getMyself()).thenReturn(myself);
+
+            when(myself.getLogin()).thenReturn(USER_FOO_LOGIN);
+            when(myself.getEmail()).thenThrow(new IOException("Connection error"));
+
+            Exception exception = assertThrows(GitHubClientException.class, () -> client.getMyself());
+            assertEquals(String.format("Error while fetching email of user %s: %s", USER_FOO_LOGIN, "Connection error"),
+                    exception.getMessage());
         }
 
     }
