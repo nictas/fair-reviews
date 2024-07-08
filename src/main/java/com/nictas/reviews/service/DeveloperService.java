@@ -35,12 +35,6 @@ public class DeveloperService {
                 .orElseThrow(() -> new NotFoundException("Could not find developer with login: " + login));
     }
 
-    public boolean existsDeveloper(String login) {
-        log.info("Checking whether developer {} exists", login);
-        return repository.get(login)
-                .isPresent();
-    }
-
     public Developer getDeveloperWithLowestScore(List<String> loginExclusionList) {
         log.info("Getting developer with lowest score with exclusion list: {}", loginExclusionList);
         return repository.getWithLowestScore(loginExclusionList)
