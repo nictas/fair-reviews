@@ -4,6 +4,3 @@ spring:
     password: fair-reviews
     url: jdbc:postgresql://localhost:5432/fair-reviews
     driver-class-name: org.postgresql.Driver
-  jpa:
-    hibernate:
-      ddl-auto: create-drop

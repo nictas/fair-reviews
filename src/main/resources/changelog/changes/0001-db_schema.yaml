@@ -1,0 +1,78 @@
+databaseChangeLog:
+  - changeSet:
+      id: 0001
+      author: nictas
+      changes:
+        - createTable:
+            tableName: developer
+            columns:
+              - column:
+                  name: login
+                  type: varchar(255)
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: email
+                  type: varchar(255)
+              - column:
+                  name: score
+                  type: double
+
+        - createTable:
+            tableName: multiplier
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: default_additions_multiplier
+                  type: double
+              - column:
+                  name: default_deletions_multiplier
+                  type: double
+              - column:
+                  name: created_at
+                  type: datetime
+              - column:
+                  name: file_multipliers
+                  type: jsonb
+
+        - createTable:
+            tableName: pull_request_review
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: developer_login
+                  type: varchar(255)
+              - column:
+                  name: score
+                  type: double
+              - column:
+                  name: multiplier_id
+                  type: uuid
+              - column:
+                  name: pull_request_url
+                  type: varchar(255)
+              - column:
+                  name: pull_request_file_details
+                  type: jsonb
+        - addForeignKeyConstraint:
+            baseTableName: pull_request_review
+            baseColumnNames: [developer_login]
+            referencedTableName: developer
+            referencedColumnNames: [login]
+            constraintName: fk_pull_request_review_developer
+            onDelete: cascade
+        - addForeignKeyConstraint:
+            baseTableName: pull_request_review
+            baseColumnNames: [multiplier_id]
+            referencedTableName: multiplier
+            referencedColumnNames: [id]
+            constraintName: fk_pull_request_review_multiplier
+            onDelete: cascade
