@@ -17,6 +17,8 @@ public interface PullRequestReviewRepository extends JpaRepository<PullRequestRe
 
     Page<PullRequestReview> findByDeveloperLogin(String developerLogin, Pageable pageable);
 
+    Page<PullRequestReview> findByMultiplierId(UUID id, Pageable pageable);
+
     @Query("SELECT p FROM PullRequestReview p WHERE p.multiplier.id != :id")
     Page<PullRequestReview> findWithDifferentMultiplierIds(UUID id, Pageable pageable);
 

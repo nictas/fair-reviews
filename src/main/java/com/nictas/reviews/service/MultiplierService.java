@@ -1,5 +1,6 @@
 package com.nictas.reviews.service;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -9,8 +10,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.nictas.reviews.domain.Multiplier;
+import com.nictas.reviews.domain.PullRequestReview;
 import com.nictas.reviews.error.NotFoundException;
 import com.nictas.reviews.repository.MultiplierRepository;
+import com.nictas.reviews.repository.PullRequestReviewRepository;
 
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
@@ -26,10 +29,12 @@ public class MultiplierService {
             .build();
 
     private final MultiplierRepository repository;
+    private final PullRequestReviewRepository pullRequestReviewRepository;
 
     @Autowired
-    public MultiplierService(MultiplierRepository repository) {
+    public MultiplierService(MultiplierRepository repository, PullRequestReviewRepository pullRequestReviewRepository) {
         this.repository = repository;
+        this.pullRequestReviewRepository = pullRequestReviewRepository;
     }
 
     public Page<Multiplier> getAllMultipliers(Pageable pageable) {
@@ -58,11 +63,19 @@ public class MultiplierService {
         return repository.save(multiplier);
     }
 
+    @Transactional
     public void deleteMultiplier(UUID id) {
         log.info("Deleting multiplier {}", id);
         if (repository.findById(id)
                 .isEmpty()) {
             throw new NotFoundException("Could not find multiplier with ID: " + id);
+        }
+        Page<PullRequestReview> reviews = pullRequestReviewRepository.findByMultiplierId(id, Pageable.unpaged());
+        if (!reviews.isEmpty()) {
+            List<UUID> reviewIds = reviews.map(PullRequestReview::getId)
+                    .toList();
+            throw new IllegalArgumentException(String.format("Multiplier %s is still referenced in %d reviews: %s", id,
+                    reviewIds.size(), reviewIds));
         }
         repository.deleteById(id);
     }
