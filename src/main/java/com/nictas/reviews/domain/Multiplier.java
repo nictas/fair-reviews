@@ -9,14 +9,17 @@ import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.Setter;
 import lombok.With;
 import lombok.extern.jackson.Jacksonized;
 
 @Data
 @With
+@Setter(AccessLevel.NONE)
 @Builder
 @Jacksonized
 @AllArgsConstructor
@@ -26,12 +29,16 @@ public class Multiplier {
     @Builder.Default
     @Id
     private UUID id = UUID.randomUUID();
-    private final double defaultAdditionsMultiplier;
-    private final double defaultDeletionsMultiplier;
+    private double defaultAdditionsMultiplier;
+    private double defaultDeletionsMultiplier;
     @Builder.Default
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     private List<FileMultiplier> fileMultipliers = Collections.emptyList();
     @Builder.Default
     private OffsetDateTime createdAt = OffsetDateTime.now();
+
+    protected Multiplier() {
+        // Required by JPA.
+    }
 
 }

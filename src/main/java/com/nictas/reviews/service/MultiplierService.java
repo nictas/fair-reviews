@@ -33,41 +33,37 @@ public class MultiplierService {
 
     public Page<Multiplier> getAllMultipliers(Pageable pageable) {
         log.info("Getting all multipliers");
-        return repository.getAll(pageable);
+        return repository.findAll(pageable);
     }
 
     public Multiplier getMultiplier(UUID id) {
         log.info("Getting multiplier {}", id);
-        return repository.get(id)
+        return repository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Could not find multiplier with ID: " + id));
     }
 
     public Multiplier getLatestMultiplier() {
         log.info("Getting latest multiplier");
-        Optional<Multiplier> multiplier = repository.getLatest();
+        Optional<Multiplier> multiplier = repository.findLatest();
         if (multiplier.isPresent()) {
             return multiplier.get();
         }
-        createMultiplier(DEFAULT_MULTIPLIER);
+        saveMultiplier(DEFAULT_MULTIPLIER);
         return DEFAULT_MULTIPLIER;
     }
 
-    public Multiplier createMultiplier(Multiplier multiplier) {
-        log.info("Creating multiplier: {}", multiplier);
-        return repository.create(multiplier);
-    }
-
-    public Multiplier updateMultiplier(Multiplier multiplier) {
-        log.info("Updating multiplier: {}", multiplier);
-        return repository.update(multiplier);
+    public Multiplier saveMultiplier(Multiplier multiplier) {
+        log.info("Saving multiplier: {}", multiplier);
+        return repository.save(multiplier);
     }
 
     public void deleteMultiplier(UUID id) {
         log.info("Deleting multiplier {}", id);
-        int deleted = repository.delete(id);
-        if (deleted < 1) {
+        if (repository.findById(id)
+                .isEmpty()) {
             throw new NotFoundException("Could not find multiplier with ID: " + id);
         }
+        repository.deleteById(id);
     }
 
 }

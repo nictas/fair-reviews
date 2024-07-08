@@ -175,7 +175,7 @@ class MultiplierControllerTest {
 
     @Test
     void testCreateMultiplier() throws Exception {
-        when(multiplierService.createMultiplier(MULTIPLIER_1)).thenReturn(MULTIPLIER_1);
+        when(multiplierService.saveMultiplier(MULTIPLIER_1)).thenReturn(MULTIPLIER_1);
 
         String multiplierJson = objectMapper.writeValueAsString(MULTIPLIER_1);
         MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.post("/multipliers")

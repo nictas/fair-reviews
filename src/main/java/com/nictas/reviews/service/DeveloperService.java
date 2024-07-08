@@ -48,8 +48,8 @@ public class DeveloperService {
 
     public void deleteDeveloper(String login) {
         log.info("Deleting developer {}", login);
-        if (!repository.findById(login)
-                .isPresent()) {
+        if (repository.findById(login)
+                .isEmpty()) {
             throw new NotFoundException("Could not find developer with login: " + login);
         }
         repository.deleteById(login);
