@@ -24,7 +24,7 @@ public class Developer {
     private String email;
     private double score;
 
-    public Developer() {
+    protected Developer() {
         // Required by JPA.
     }
 

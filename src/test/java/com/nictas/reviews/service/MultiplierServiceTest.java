@@ -80,7 +80,7 @@ class MultiplierServiceTest {
         List<Multiplier> multipliers = List.of(MULTIPLIER_1, MULTIPLIER_2);
         Pageable pageable = PageRequest.of(0, 10);
         Page<Multiplier> multipliersPage = new PageImpl<>(multipliers, pageable, multipliers.size());
-        when(multiplierRepository.getAll(pageable)).thenReturn(multipliersPage);
+        when(multiplierRepository.findAll(pageable)).thenReturn(multipliersPage);
 
         Page<Multiplier> actualMultipliersPage = multiplierService.getAllMultipliers(pageable);
 
@@ -89,7 +89,7 @@ class MultiplierServiceTest {
 
     @Test
     void testGetMultiplier() {
-        when(multiplierRepository.get(MULTIPLIER_1.getId())).thenReturn(Optional.of(MULTIPLIER_1));
+        when(multiplierRepository.findById(MULTIPLIER_1.getId())).thenReturn(Optional.of(MULTIPLIER_1));
 
         Multiplier multiplier = multiplierService.getMultiplier(MULTIPLIER_1.getId());
 
@@ -99,7 +99,7 @@ class MultiplierServiceTest {
     @Test
     void testGetMultiplierNotFound() {
         UUID id = MULTIPLIER_1.getId();
-        when(multiplierRepository.get(id)).thenReturn(Optional.empty());
+        when(multiplierRepository.findById(id)).thenReturn(Optional.empty());
 
         NotFoundException exception = assertThrows(NotFoundException.class, () -> multiplierService.getMultiplier(id));
 
@@ -108,25 +108,16 @@ class MultiplierServiceTest {
 
     @Test
     void testCreateMultiplier() {
-        when(multiplierRepository.create(MULTIPLIER_1)).thenReturn(MULTIPLIER_1);
-        Multiplier multiplier = multiplierService.createMultiplier(MULTIPLIER_1);
+        when(multiplierRepository.save(MULTIPLIER_1)).thenReturn(MULTIPLIER_1);
+        Multiplier multiplier = multiplierService.saveMultiplier(MULTIPLIER_1);
 
         assertEquals(MULTIPLIER_1, multiplier);
-        verify(multiplierRepository).create(MULTIPLIER_1);
-    }
-
-    @Test
-    void testUpdateMultiplier() {
-        when(multiplierRepository.update(MULTIPLIER_1)).thenReturn(MULTIPLIER_1);
-        Multiplier multiplier = multiplierService.updateMultiplier(MULTIPLIER_1);
-
-        assertEquals(MULTIPLIER_1, multiplier);
-        verify(multiplierRepository).update(MULTIPLIER_1);
+        verify(multiplierRepository).save(MULTIPLIER_1);
     }
 
     @Test
     void testGetLatestMultiplier() {
-        when(multiplierRepository.getLatest()).thenReturn(Optional.of(MULTIPLIER_1));
+        when(multiplierRepository.findLatest()).thenReturn(Optional.of(MULTIPLIER_1));
 
         Multiplier multiplier = multiplierService.getLatestMultiplier();
 
@@ -135,28 +126,28 @@ class MultiplierServiceTest {
 
     @Test
     void testGetLatestMultiplierDefault() {
-        when(multiplierRepository.getLatest()).thenReturn(Optional.empty());
+        when(multiplierRepository.findLatest()).thenReturn(Optional.empty());
 
         Multiplier multiplier = multiplierService.getLatestMultiplier();
 
         assertSame(MultiplierService.DEFAULT_MULTIPLIER, multiplier);
-        verify(multiplierRepository).create(MultiplierService.DEFAULT_MULTIPLIER);
+        verify(multiplierRepository).save(MultiplierService.DEFAULT_MULTIPLIER);
     }
 
     @Test
     void testDeleteDeveloper() {
         UUID id = MULTIPLIER_1.getId();
-        when(multiplierRepository.delete(id)).thenReturn(1);
+        when(multiplierRepository.findById(id)).thenReturn(Optional.of(MULTIPLIER_1));
 
         assertDoesNotThrow(() -> multiplierService.deleteMultiplier(id));
 
-        verify(multiplierRepository).delete(id);
+        verify(multiplierRepository).deleteById(id);
     }
 
     @Test
     void testDeleteDeveloperNotFound() {
         UUID id = MULTIPLIER_1.getId();
-        when(multiplierRepository.delete(id)).thenReturn(0);
+        when(multiplierRepository.findById(id)).thenReturn(Optional.empty());
 
         NotFoundException exception = assertThrows(NotFoundException.class,
                 () -> multiplierService.deleteMultiplier(id));

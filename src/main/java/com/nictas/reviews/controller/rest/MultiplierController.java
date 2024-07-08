@@ -61,7 +61,7 @@ public class MultiplierController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public Multiplier createMultiplier(@RequestBody Multiplier multiplier) {
-        return multiplierService.createMultiplier(multiplier);
+        return multiplierService.saveMultiplier(multiplier);
     }
 
     @DeleteMapping("/{id}")

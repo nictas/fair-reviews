@@ -10,15 +10,45 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.util.TestPropertyValues;
+import org.springframework.context.ApplicationContextInitializer;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.test.context.ContextConfiguration;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
+import com.nictas.reviews.FairReviewsPostgreSQLContainer;
 import com.nictas.reviews.domain.FileMultiplier;
 import com.nictas.reviews.domain.Multiplier;
 
-class InMemoryMultiplierRepositoryTest {
+@Testcontainers
+@DataJpaTest
+@ContextConfiguration(initializers = {MultiplierRepositoryTest.Initializer.class})
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+class MultiplierRepositoryTest {
+
+    @Container
+    public static final FairReviewsPostgreSQLContainer POSTGRESQL_CONTAINER = FairReviewsPostgreSQLContainer
+            .getInstance();
+
+    static class Initializer implements ApplicationContextInitializer<ConfigurableApplicationContext> {
+
+        public void initialize(ConfigurableApplicationContext configurableApplicationContext) {
+            TestPropertyValues
+                    .of("spring.datasource.url=" + POSTGRESQL_CONTAINER.getJdbcUrl(),
+                            "spring.datasource.username=" + POSTGRESQL_CONTAINER.getUsername(),
+                            "spring.datasource.password=" + POSTGRESQL_CONTAINER.getPassword())
+                    .applyTo(configurableApplicationContext.getEnvironment());
+        }
+
+    }
 
     private static final Multiplier MULTIPLIER_1 = Multiplier.builder()
             .id(UUID.fromString("2f7fc3e6-b54f-4593-aaca-98aeed3d6d02"))
@@ -77,79 +107,79 @@ class InMemoryMultiplierRepositoryTest {
             .createdAt(OffsetDateTime.of(2024, 4, 25, 12, 22, 20, 0, ZoneOffset.UTC))
             .build();
 
-    private MultiplierRepository multiplierRepository = new InMemoryMultiplierRepository();
+    @Autowired
+    private MultiplierRepository multiplierRepository;
 
     @Test
-    void testCreateAndGet() {
-        Multiplier createdMultiplier = multiplierRepository.create(MULTIPLIER_1);
+    void testSaveAndFindById() {
+        Multiplier createdMultiplier = multiplierRepository.save(MULTIPLIER_1);
         assertEquals(MULTIPLIER_1, createdMultiplier);
 
-        Multiplier multiplier = multiplierRepository.get(MULTIPLIER_1.getId())
+        Multiplier multiplier = multiplierRepository.findById(MULTIPLIER_1.getId())
                 .get();
         assertEquals(MULTIPLIER_1, multiplier);
     }
 
     @Test
-    void testGetWithZeroMultipliers() {
-        Optional<Multiplier> multiplier = multiplierRepository.get(MULTIPLIER_1.getId());
+    void testFindByIdWithZeroMultipliers() {
+        Optional<Multiplier> multiplier = multiplierRepository.findById(MULTIPLIER_1.getId());
         assertTrue(multiplier.isEmpty());
     }
 
     @Test
-    void testGetLatest() {
+    void testFindLatest() {
         List<Multiplier> multipliers = List.of(MULTIPLIER_1, MULTIPLIER_2, MULTIPLIER_3);
-        multipliers.forEach(multiplierRepository::create);
+        multipliers.forEach(multiplierRepository::save);
 
-        Multiplier multiplier = multiplierRepository.getLatest()
+        Multiplier multiplier = multiplierRepository.findLatest()
                 .get();
         assertEquals(MULTIPLIER_2, multiplier);
     }
 
     @Test
-    void testGetLatestWithZeroMultipliers() {
-        Optional<Multiplier> multiplier = multiplierRepository.getLatest();
+    void testFindLatestWithZeroMultipliers() {
+        Optional<Multiplier> multiplier = multiplierRepository.findLatest();
         assertTrue(multiplier.isEmpty());
     }
 
     @Test
-    void testGetAll() {
+    void testFindAll() {
         List<Multiplier> multipliers = List.of(MULTIPLIER_1, MULTIPLIER_2, MULTIPLIER_3);
-        multipliers.forEach(multiplierRepository::create);
+        multipliers.forEach(multiplierRepository::save);
 
         Pageable pageable = Pageable.unpaged();
-        Page<Multiplier> multipliersPage = multiplierRepository.getAll(pageable);
+        Page<Multiplier> multipliersPage = multiplierRepository.findAll(pageable);
         Page<Multiplier> expectedMultipliersPage = new PageImpl<>(multipliers, pageable, multipliers.size());
         assertEquals(expectedMultipliersPage, multipliersPage);
     }
 
     @Test
-    void testGetAllWithPagination() {
+    void testFindAllWithPagination() {
         List<Multiplier> multipliers = List.of(MULTIPLIER_1, MULTIPLIER_2, MULTIPLIER_3);
-        multipliers.forEach(multiplierRepository::create);
+        multipliers.forEach(multiplierRepository::save);
 
         Pageable pageable = PageRequest.of(1, 1);
-        Page<Multiplier> multipliersPage = multiplierRepository.getAll(pageable);
+        Page<Multiplier> multipliersPage = multiplierRepository.findAll(pageable);
         Page<Multiplier> expectedMultipliersPage = new PageImpl<>(List.of(MULTIPLIER_2), pageable, multipliers.size());
         assertEquals(expectedMultipliersPage, multipliersPage);
     }
 
     @Test
     void testUpdate() {
-        multiplierRepository.create(MULTIPLIER_1);
-        Multiplier mutiplier = multiplierRepository.update(MULTIPLIER_1.withDefaultAdditionsMultiplier(5.0));
+        multiplierRepository.save(MULTIPLIER_1);
+        Multiplier mutiplier = multiplierRepository.save(MULTIPLIER_1.withDefaultAdditionsMultiplier(5.0));
 
         assertEquals(5.0, mutiplier.getDefaultAdditionsMultiplier());
         assertEquals(0.2, mutiplier.getDefaultDeletionsMultiplier());
     }
 
     @Test
-    void testDelete() {
-        multiplierRepository.create(MULTIPLIER_1);
+    void testDeleteById() {
+        multiplierRepository.save(MULTIPLIER_1);
 
-        int deleted = multiplierRepository.delete(MULTIPLIER_1.getId());
-        assertEquals(1, deleted);
+        multiplierRepository.deleteById(MULTIPLIER_1.getId());
 
-        Optional<Multiplier> multiplier = multiplierRepository.get(MULTIPLIER_1.getId());
+        Optional<Multiplier> multiplier = multiplierRepository.findById(MULTIPLIER_1.getId());
         assertTrue(multiplier.isEmpty());
     }
 
