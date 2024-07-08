@@ -10,6 +10,9 @@ import org.springframework.stereotype.Component;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Component
 public class GitHubSettingsProvider {
 
@@ -35,6 +38,7 @@ public class GitHubSettingsProvider {
     }
 
     public GitHubSettings getSettingsForUrl(String url) {
+        log.info("Getting settings for URL: {}", url);
         for (Map.Entry<String, String> gitHubToken : gitHubTokens.entrySet()) {
             if (url.startsWith(gitHubToken.getKey())) {
                 return buildGitHubSettings(gitHubToken.getKey(), gitHubToken.getValue());

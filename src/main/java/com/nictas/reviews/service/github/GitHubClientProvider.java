@@ -13,6 +13,9 @@ import org.springframework.stereotype.Component;
 import com.nictas.reviews.service.github.settings.GitHubSettings;
 import com.nictas.reviews.service.github.settings.GitHubSettingsProvider;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Component
 public class GitHubClientProvider {
 
@@ -34,10 +37,12 @@ public class GitHubClientProvider {
 
     public GitHubClient getClientForUrl(String url) {
         GitHubSettings settings = settingsProvider.getSettingsForUrl(url);
+        log.info("Received settings for URL: {}", settings);
         return clientCache.computeIfAbsent(settings.getUrl(), unused -> createClient(settings));
     }
 
     private GitHubClient createClient(GitHubSettings settings) {
+        log.info("Creating GitHub client for URL {} with settings: {}", settings.getUrl(), settings);
         return new GitHubClient(delegateConstructor.apply(settings));
     }
 

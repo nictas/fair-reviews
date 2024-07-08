@@ -17,6 +17,9 @@ import com.nictas.reviews.domain.PullRequest;
 import com.nictas.reviews.domain.PullRequestFileDetails;
 import com.nictas.reviews.domain.PullRequestFileDetails.ChangedFile;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class GitHubClient {
 
     private final GitHub delegate;
@@ -30,6 +33,8 @@ public class GitHubClient {
     }
 
     public PullRequestFileDetails getPullRequestInfo(PullRequest pullRequest) {
+        log.info("Getting info for PR: {}/{}/{}", pullRequest.getOwner(), pullRequest.getRepository(),
+                pullRequest.getNumber());
         try {
             GHRepository repository = delegate
                     .getRepository(pullRequest.getOwner() + "/" + pullRequest.getRepository());
@@ -54,6 +59,7 @@ public class GitHubClient {
     }
 
     public List<Developer> getDevelopers(String organizationName, String teamName) {
+        log.info("Getting developers for organization {} and team {}", organizationName, teamName);
         try {
             GHOrganization organization = delegate.getOrganization(organizationName);
             GHTeam team = organization.getTeamByName(teamName);
