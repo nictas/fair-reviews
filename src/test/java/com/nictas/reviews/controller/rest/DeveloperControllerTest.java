@@ -14,15 +14,19 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
+import com.nictas.reviews.configuration.GitHubOpaqueTokenIntrospector;
+import com.nictas.reviews.configuration.SecurityConfiguration;
 import com.nictas.reviews.domain.Developer;
 import com.nictas.reviews.domain.FileMultiplier;
 import com.nictas.reviews.domain.Multiplier;
@@ -34,6 +38,7 @@ import com.nictas.reviews.service.DeveloperService;
 import com.nictas.reviews.service.PullRequestReviewService;
 
 @WebMvcTest(DeveloperController.class)
+@Import(SecurityConfiguration.class)
 class DeveloperControllerTest {
 
     private static final Multiplier MULTIPLIER = Multiplier.builder()
@@ -128,6 +133,9 @@ class DeveloperControllerTest {
     private DeveloperService developerService;
 
     @MockBean
+    private GitHubOpaqueTokenIntrospector introspector;
+
+    @MockBean
     private PullRequestReviewService pullRequestReviewService;
 
     @Test
@@ -137,7 +145,9 @@ class DeveloperControllerTest {
         when(developerService.getAllDevelopers(pageable))
                 .thenReturn(new PageImpl<>(developers, pageable, developers.size()));
 
-        MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/developers"))
+        MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/developers")
+                .with(SecurityMockMvcRequestPostProcessors.opaqueToken()
+                        .authorities(ControllerTestData.AUTHORITIES_USER)))
                 .andExpect(MockMvcResultMatchers.status()
                         .isOk())
                 .andReturn();
@@ -149,10 +159,20 @@ class DeveloperControllerTest {
     }
 
     @Test
+    void testGetDevelopersUnauthorized() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.get("/developers"))
+                .andExpect(MockMvcResultMatchers.status()
+                        .isUnauthorized())
+                .andReturn();
+    }
+
+    @Test
     void testGetDeveloper() throws Exception {
         when(developerService.getDeveloper(DEVELOPER_FOO.getLogin())).thenReturn(DEVELOPER_FOO);
 
-        MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/developers/foo"))
+        MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/developers/foo")
+                .with(SecurityMockMvcRequestPostProcessors.opaqueToken()
+                        .authorities(ControllerTestData.AUTHORITIES_USER)))
                 .andExpect(MockMvcResultMatchers.status()
                         .isOk())
                 .andReturn();
@@ -168,7 +188,9 @@ class DeveloperControllerTest {
         when(developerService.getDeveloper(DEVELOPER_FOO.getLogin()))
                 .thenThrow(new NotFoundException("Could not find developer with login: foo"));
 
-        mockMvc.perform(MockMvcRequestBuilders.get("/developers/foo"))
+        mockMvc.perform(MockMvcRequestBuilders.get("/developers/foo")
+                .with(SecurityMockMvcRequestPostProcessors.opaqueToken()
+                        .authorities(ControllerTestData.AUTHORITIES_USER)))
                 .andExpect(MockMvcResultMatchers.status()
                         .isNotFound())
                 .andExpect(MockMvcResultMatchers.content()
@@ -182,7 +204,9 @@ class DeveloperControllerTest {
         Exception e = new IllegalStateException("Unable to connect to DB");
         when(developerService.getDeveloper(DEVELOPER_FOO.getLogin())).thenThrow(e);
 
-        mockMvc.perform(MockMvcRequestBuilders.get("/developers/foo"))
+        mockMvc.perform(MockMvcRequestBuilders.get("/developers/foo")
+                .with(SecurityMockMvcRequestPostProcessors.opaqueToken()
+                        .authorities(ControllerTestData.AUTHORITIES_USER)))
                 .andExpect(MockMvcResultMatchers.status()
                         .is(500))
                 .andExpect(MockMvcResultMatchers.content()
@@ -197,7 +221,9 @@ class DeveloperControllerTest {
         when(pullRequestReviewService.getReviewsByDeveloperLogin(DEVELOPER_FOO.getLogin(), pageable))
                 .thenReturn(new PageImpl<>(DEVELOPER_FOO_HISTORY, pageable, DEVELOPER_FOO_HISTORY.size()));
 
-        MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/developers/foo/history"))
+        MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/developers/foo/history")
+                .with(SecurityMockMvcRequestPostProcessors.opaqueToken()
+                        .authorities(ControllerTestData.AUTHORITIES_USER)))
                 .andExpect(MockMvcResultMatchers.status()
                         .isOk())
                 .andReturn();
@@ -210,9 +236,20 @@ class DeveloperControllerTest {
 
     @Test
     void testDeleteDeveloper() throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.delete("/developers/foo"))
+        mockMvc.perform(MockMvcRequestBuilders.delete("/developers/foo")
+                .with(SecurityMockMvcRequestPostProcessors.opaqueToken()
+                        .authorities(ControllerTestData.AUTHORITIES_ADMIN)))
                 .andExpect(MockMvcResultMatchers.status()
                         .isNoContent());
+    }
+
+    @Test
+    void testDeleteDeveloperForbidden() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.delete("/developers/foo")
+                .with(SecurityMockMvcRequestPostProcessors.opaqueToken()
+                        .authorities(ControllerTestData.AUTHORITIES_USER)))
+                .andExpect(MockMvcResultMatchers.status()
+                        .isForbidden());
     }
 
     @Test
@@ -220,7 +257,9 @@ class DeveloperControllerTest {
         doThrow(new NotFoundException("Could not find developer with login: foo")).when(developerService)
                 .deleteDeveloper(DEVELOPER_FOO.getLogin());
 
-        mockMvc.perform(MockMvcRequestBuilders.delete("/developers/foo"))
+        mockMvc.perform(MockMvcRequestBuilders.delete("/developers/foo")
+                .with(SecurityMockMvcRequestPostProcessors.opaqueToken()
+                        .authorities(ControllerTestData.AUTHORITIES_ADMIN)))
                 .andExpect(MockMvcResultMatchers.status()
                         .isNotFound())
                 .andExpect(MockMvcResultMatchers.content()

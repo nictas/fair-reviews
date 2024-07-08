@@ -15,16 +15,20 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nictas.reviews.configuration.GitHubOpaqueTokenIntrospector;
+import com.nictas.reviews.configuration.SecurityConfiguration;
 import com.nictas.reviews.controller.rest.dto.PullRequestAssignRequest;
 import com.nictas.reviews.controller.rest.dto.PullRequestSearchRequest;
 import com.nictas.reviews.domain.Developer;
@@ -37,6 +41,7 @@ import com.nictas.reviews.error.NotFoundException;
 import com.nictas.reviews.service.PullRequestReviewService;
 
 @WebMvcTest(PullRequestReviewController.class)
+@Import(SecurityConfiguration.class)
 class PullRequestReviewControllerTest {
 
     private static final Developer DEVELOPER_FOO = Developer.builder()
@@ -139,6 +144,9 @@ class PullRequestReviewControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @MockBean
+    private GitHubOpaqueTokenIntrospector introspector;
+
     @Test
     void testGetReviews() throws Exception {
         Pageable pageable = PageRequest.of(0, 20);
@@ -146,7 +154,9 @@ class PullRequestReviewControllerTest {
         when(pullRequestReviewService.getAllReviews(pageable))
                 .thenReturn(new PageImpl<>(reviews, pageable, reviews.size()));
 
-        MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/reviews"))
+        MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get("/reviews")
+                .with(SecurityMockMvcRequestPostProcessors.opaqueToken()
+                        .authorities(ControllerTestData.AUTHORITIES_USER)))
                 .andExpect(MockMvcResultMatchers.status()
                         .isOk())
                 .andReturn();
@@ -162,7 +172,9 @@ class PullRequestReviewControllerTest {
         when(pullRequestReviewService.getReview(REVIEW_1.getId())).thenReturn(REVIEW_1);
 
         MvcResult mvcResult = mockMvc
-                .perform(MockMvcRequestBuilders.get("/reviews/91a8bdeb-8457-4905-bd08-9d2a46f27b92"))
+                .perform(MockMvcRequestBuilders.get("/reviews/91a8bdeb-8457-4905-bd08-9d2a46f27b92")
+                        .with(SecurityMockMvcRequestPostProcessors.opaqueToken()
+                                .authorities(ControllerTestData.AUTHORITIES_USER)))
                 .andExpect(MockMvcResultMatchers.status()
                         .isOk())
                 .andReturn();
@@ -178,7 +190,9 @@ class PullRequestReviewControllerTest {
         when(pullRequestReviewService.getReview(REVIEW_1.getId())).thenThrow(
                 new NotFoundException("Could not find review with ID: 91a8bdeb-8457-4905-bd08-9d2a46f27b92"));
 
-        mockMvc.perform(MockMvcRequestBuilders.get("/reviews/91a8bdeb-8457-4905-bd08-9d2a46f27b92"))
+        mockMvc.perform(MockMvcRequestBuilders.get("/reviews/91a8bdeb-8457-4905-bd08-9d2a46f27b92")
+                .with(SecurityMockMvcRequestPostProcessors.opaqueToken()
+                        .authorities(ControllerTestData.AUTHORITIES_USER)))
                 .andExpect(MockMvcResultMatchers.status()
                         .isNotFound())
                 .andExpect(MockMvcResultMatchers.content()
@@ -192,7 +206,9 @@ class PullRequestReviewControllerTest {
         Exception e = new IllegalStateException("Unable to connect to DB");
         when(pullRequestReviewService.getReview(REVIEW_1.getId())).thenThrow(e);
 
-        mockMvc.perform(MockMvcRequestBuilders.get("/reviews/91a8bdeb-8457-4905-bd08-9d2a46f27b92"))
+        mockMvc.perform(MockMvcRequestBuilders.get("/reviews/91a8bdeb-8457-4905-bd08-9d2a46f27b92")
+                .with(SecurityMockMvcRequestPostProcessors.opaqueToken()
+                        .authorities(ControllerTestData.AUTHORITIES_USER)))
                 .andExpect(MockMvcResultMatchers.status()
                         .is(500))
                 .andExpect(MockMvcResultMatchers.content()
@@ -213,7 +229,9 @@ class PullRequestReviewControllerTest {
 
         MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.post("/reviews/search")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(requestBody))
+                .content(requestBody)
+                .with(SecurityMockMvcRequestPostProcessors.opaqueToken()
+                        .authorities(ControllerTestData.AUTHORITIES_USER)))
                 .andExpect(MockMvcResultMatchers.status()
                         .isOk())
                 .andReturn();
@@ -235,7 +253,9 @@ class PullRequestReviewControllerTest {
 
         MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.post("/reviews/assign")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(requestBody))
+                .content(requestBody)
+                .with(SecurityMockMvcRequestPostProcessors.opaqueToken()
+                        .authorities(ControllerTestData.AUTHORITIES_USER)))
                 .andExpect(MockMvcResultMatchers.status()
                         .isOk())
                 .andReturn();
@@ -259,7 +279,9 @@ class PullRequestReviewControllerTest {
 
         mockMvc.perform(MockMvcRequestBuilders.post("/reviews/assign")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(requestBody))
+                .content(requestBody)
+                .with(SecurityMockMvcRequestPostProcessors.opaqueToken()
+                        .authorities(ControllerTestData.AUTHORITIES_USER)))
                 .andExpect(MockMvcResultMatchers.status()
                         .isBadRequest())
                 .andExpect(MockMvcResultMatchers.content()
@@ -271,9 +293,20 @@ class PullRequestReviewControllerTest {
 
     @Test
     void testDeleteReview() throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.delete("/reviews/91a8bdeb-8457-4905-bd08-9d2a46f27b92"))
+        mockMvc.perform(MockMvcRequestBuilders.delete("/reviews/91a8bdeb-8457-4905-bd08-9d2a46f27b92")
+                .with(SecurityMockMvcRequestPostProcessors.opaqueToken()
+                        .authorities(ControllerTestData.AUTHORITIES_ADMIN)))
                 .andExpect(MockMvcResultMatchers.status()
                         .isNoContent());
+    }
+
+    @Test
+    void testDeleteReviewForbidden() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.delete("/reviews/91a8bdeb-8457-4905-bd08-9d2a46f27b92")
+                .with(SecurityMockMvcRequestPostProcessors.opaqueToken()
+                        .authorities(ControllerTestData.AUTHORITIES_USER)))
+                .andExpect(MockMvcResultMatchers.status()
+                        .isForbidden());
     }
 
     @Test
@@ -282,7 +315,9 @@ class PullRequestReviewControllerTest {
                 .when(pullRequestReviewService)
                 .deleteReview(REVIEW_1.getId());
 
-        mockMvc.perform(MockMvcRequestBuilders.delete("/reviews/91a8bdeb-8457-4905-bd08-9d2a46f27b92"))
+        mockMvc.perform(MockMvcRequestBuilders.delete("/reviews/91a8bdeb-8457-4905-bd08-9d2a46f27b92")
+                .with(SecurityMockMvcRequestPostProcessors.opaqueToken()
+                        .authorities(ControllerTestData.AUTHORITIES_ADMIN)))
                 .andExpect(MockMvcResultMatchers.status()
                         .isNotFound())
                 .andExpect(MockMvcResultMatchers.content()

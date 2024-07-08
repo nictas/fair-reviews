@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.kohsuke.github.GHMyself;
 import org.kohsuke.github.GHOrganization;
 import org.kohsuke.github.GHPullRequest;
 import org.kohsuke.github.GHPullRequestFileDetail;
@@ -21,6 +22,8 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class GitHubClient {
+
+    static final String ORGANIZATION_ROLE_ADMIN = "admin";
 
     private final GitHub delegate;
 
@@ -53,7 +56,7 @@ public class GitHubClient {
 
             return new PullRequestFileDetails(changedFiles);
         } catch (IOException e) {
-            throw new IllegalStateException(String.format("Error while fetching info for PR %s/%s/%d: %s",
+            throw new GitHubClientException(String.format("Error while fetching info for PR %s/%s/%d: %s",
                     pullRequest.getOwner(), pullRequest.getRepository(), pullRequest.getNumber(), e.getMessage()), e);
         }
     }
@@ -65,7 +68,7 @@ public class GitHubClient {
             GHTeam team = organization.getTeamByName(teamName);
 
             if (team == null) {
-                throw new IllegalStateException(
+                throw new GitHubClientException(
                         String.format("Unable to find team %s in organization: %s", teamName, organizationName));
             }
 
@@ -75,10 +78,33 @@ public class GitHubClient {
                     .map(this::toDeveloper)
                     .toList();
         } catch (IOException e) {
-            throw new IllegalStateException(
+            throw new GitHubClientException(
                     String.format("Error while fetching GitHub users from organization %s and team %s: %s",
                             organizationName, teamName, e.getMessage()),
                     e);
+        }
+    }
+
+    public List<Developer> getOrganizationAdmins(String organizationName) {
+        try {
+            GHOrganization organization = delegate.getOrganization(organizationName);
+            return organization.listMembersWithRole(ORGANIZATION_ROLE_ADMIN)
+                    .toList()
+                    .stream()
+                    .map(this::toDeveloper)
+                    .toList();
+        } catch (IOException e) {
+            throw new GitHubClientException(String.format("Error while fetching GitHub users from organization %s: %s",
+                    organizationName, e.getMessage()), e);
+        }
+    }
+
+    public Developer getMyself() {
+        try {
+            GHMyself myself = delegate.getMyself();
+            return toDeveloper(myself);
+        } catch (IOException e) {
+            throw new GitHubClientException(String.format("Error while fetching GitHub user: %s", e.getMessage()), e);
         }
     }
 
@@ -86,7 +112,7 @@ public class GitHubClient {
         try {
             return new Developer(user.getLogin(), user.getEmail());
         } catch (IOException e) {
-            throw new IllegalStateException(
+            throw new GitHubClientException(
                     String.format("Error while fetching email of user %s: %s", user.getLogin(), e.getMessage()), e);
         }
     }
