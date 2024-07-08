@@ -2,24 +2,31 @@ package com.nictas.reviews.domain;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.With;
 import lombok.extern.jackson.Jacksonized;
 
 @Data
 @With
+@Setter(AccessLevel.NONE)
 @Builder
 @Jacksonized
-@RequiredArgsConstructor
+@AllArgsConstructor
 @Entity
 public class Developer {
 
     @Id
-    private final String login;
-    private final String email;
-    private final double score;
+    private String login;
+    private String email;
+    private double score;
+
+    public Developer() {
+        // Required by JPA.
+    }
 
     public Developer(String login, String email) {
         this(login, email, 0.);

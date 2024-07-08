@@ -132,12 +132,12 @@ class MultiplierApplierServiceTest {
         verify(pullRequestReviewService).updateReview(REVIEW_1.withScore(100.)
                 .withMultiplier(MULTIPLIER_2)
                 .withDeveloper(developerWithUpdatedScore1));
-        verify(developerService).updateDeveloper(developerWithUpdatedScore1);
+        verify(developerService).saveDeveloper(developerWithUpdatedScore1);
         Developer developerWithUpdatedScore2 = DEVELOPER.withScore(140.);
         verify(pullRequestReviewService).updateReview(REVIEW_2.withScore(200.)
                 .withMultiplier(MULTIPLIER_2)
                 .withDeveloper(developerWithUpdatedScore2));
-        verify(developerService).updateDeveloper(developerWithUpdatedScore2);
+        verify(developerService).saveDeveloper(developerWithUpdatedScore2);
     }
 
 }

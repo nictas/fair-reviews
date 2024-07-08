@@ -230,7 +230,7 @@ class PullRequestReviewServiceTest {
 
         Developer expectedAssignee = DEVELOPER_FOO.withScore(PR_SCORE);
         assertEquals(expectedAssignee, review.getDeveloper());
-        verify(developerService).updateDeveloper(expectedAssignee);
+        verify(developerService).saveDeveloper(expectedAssignee);
         verify(pullRequestReviewRepository).create(review);
     }
 
@@ -252,8 +252,8 @@ class PullRequestReviewServiceTest {
 
         assertEquals(expectedAssigneeFoo, reviewOfFoo.getDeveloper());
         assertEquals(expectedAssigneeBar, reviewOfBar.getDeveloper());
-        verify(developerService).updateDeveloper(expectedAssigneeFoo);
-        verify(developerService).updateDeveloper(expectedAssigneeBar);
+        verify(developerService).saveDeveloper(expectedAssigneeFoo);
+        verify(developerService).saveDeveloper(expectedAssigneeBar);
         verify(pullRequestReviewRepository).create(reviewOfFoo);
         verify(pullRequestReviewRepository).create(reviewOfBar);
     }
@@ -311,7 +311,7 @@ class PullRequestReviewServiceTest {
 
         Developer expectedAssignee = DEVELOPER_BAZ.withScore(PR_SCORE);
         assertEquals(expectedAssignee, review.getDeveloper());
-        verify(developerService).updateDeveloper(expectedAssignee);
+        verify(developerService).saveDeveloper(expectedAssignee);
     }
 
     @Test
@@ -340,8 +340,7 @@ class PullRequestReviewServiceTest {
 
         assertDoesNotThrow(() -> pullRequestReviewService.deleteReview(id));
 
-        verify(developerService)
-                .updateDeveloper(DEVELOPER_FOO.withScore(DEVELOPER_FOO.getScore() - REVIEW_1.getScore()));
+        verify(developerService).saveDeveloper(DEVELOPER_FOO.withScore(DEVELOPER_FOO.getScore() - REVIEW_1.getScore()));
         verify(pullRequestReviewRepository).delete(id);
     }
 

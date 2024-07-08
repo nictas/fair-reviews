@@ -42,7 +42,7 @@ class DeveloperServiceTest {
         List<Developer> developers = List.of(DEVELOPER_FOO, DEVELOPER_BAR);
         Pageable pageable = PageRequest.of(0, 10);
         Page<Developer> developersPage = new PageImpl<>(developers, pageable, developers.size());
-        when(developerRepository.getAll(pageable)).thenReturn(developersPage);
+        when(developerRepository.findAll(pageable)).thenReturn(developersPage);
 
         Page<Developer> actualDevelopersPage = developerService.getAllDevelopers(pageable);
 
@@ -51,7 +51,7 @@ class DeveloperServiceTest {
 
     @Test
     void testGetDeveloper() {
-        when(developerRepository.get(DEVELOPER_FOO.getLogin())).thenReturn(Optional.of(DEVELOPER_FOO));
+        when(developerRepository.findById(DEVELOPER_FOO.getLogin())).thenReturn(Optional.of(DEVELOPER_FOO));
 
         Developer developer = developerService.getDeveloper(DEVELOPER_FOO.getLogin());
 
@@ -61,7 +61,7 @@ class DeveloperServiceTest {
     @Test
     void testGetDeveloperNotFound() {
         String login = DEVELOPER_FOO.getLogin();
-        when(developerRepository.get(login)).thenReturn(Optional.empty());
+        when(developerRepository.findById(login)).thenReturn(Optional.empty());
 
         NotFoundException exception = assertThrows(NotFoundException.class, () -> developerService.getDeveloper(login));
 
@@ -69,23 +69,16 @@ class DeveloperServiceTest {
     }
 
     @Test
-    void testCreateDeveloper() {
-        developerService.createDeveloper(DEVELOPER_FOO);
+    void testSaveDeveloper() {
+        developerService.saveDeveloper(DEVELOPER_FOO);
 
-        verify(developerRepository).create(DEVELOPER_FOO);
-    }
-
-    @Test
-    void testUpdateDeveloper() {
-        developerService.updateDeveloper(DEVELOPER_FOO);
-
-        verify(developerRepository).update(DEVELOPER_FOO);
+        verify(developerRepository).save(DEVELOPER_FOO);
     }
 
     @Test
     void testGetDeveloperWithLowestScore() {
         List<String> loginExclusionList = Collections.emptyList();
-        when(developerRepository.getWithLowestScore(loginExclusionList)).thenReturn(Optional.of(DEVELOPER_FOO));
+        when(developerRepository.findWithLowestScore(loginExclusionList)).thenReturn(Optional.of(DEVELOPER_FOO));
 
         Developer developer = developerService.getDeveloperWithLowestScore(loginExclusionList);
 
@@ -95,7 +88,7 @@ class DeveloperServiceTest {
     @Test
     void testGetDeveloperWithLowestScoreNotFound() {
         List<String> loginExclusionList = Collections.emptyList();
-        when(developerRepository.getWithLowestScore(loginExclusionList)).thenReturn(Optional.empty());
+        when(developerRepository.findWithLowestScore(loginExclusionList)).thenReturn(Optional.empty());
 
         NotFoundException exception = assertThrows(NotFoundException.class,
                 () -> developerService.getDeveloperWithLowestScore(loginExclusionList));
@@ -106,17 +99,17 @@ class DeveloperServiceTest {
     @Test
     void testDeleteDeveloper() {
         String login = DEVELOPER_FOO.getLogin();
-        when(developerRepository.delete(login)).thenReturn(1);
+        when(developerRepository.findById(login)).thenReturn(Optional.of(DEVELOPER_FOO));
 
         assertDoesNotThrow(() -> developerService.deleteDeveloper(login));
 
-        verify(developerRepository).delete(login);
+        verify(developerRepository).deleteById(login);
     }
 
     @Test
     void testDeleteDeveloperNotFound() {
         String login = DEVELOPER_FOO.getLogin();
-        when(developerRepository.delete(login)).thenReturn(0);
+        when(developerRepository.findById(login)).thenReturn(Optional.empty());
 
         NotFoundException exception = assertThrows(NotFoundException.class,
                 () -> developerService.deleteDeveloper(login));

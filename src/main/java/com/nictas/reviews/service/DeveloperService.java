@@ -26,37 +26,33 @@ public class DeveloperService {
 
     public Page<Developer> getAllDevelopers(Pageable pageable) {
         log.info("Getting all developers");
-        return repository.getAll(pageable);
+        return repository.findAll(pageable);
     }
 
     public Developer getDeveloper(String login) {
         log.info("Getting developer {}", login);
-        return repository.get(login)
+        return repository.findById(login)
                 .orElseThrow(() -> new NotFoundException("Could not find developer with login: " + login));
     }
 
     public Developer getDeveloperWithLowestScore(List<String> loginExclusionList) {
         log.info("Getting developer with lowest score with exclusion list: {}", loginExclusionList);
-        return repository.getWithLowestScore(loginExclusionList)
+        return repository.findWithLowestScore(loginExclusionList)
                 .orElseThrow(() -> new NotFoundException("Could not find developer with lowest score"));
     }
 
-    public void createDeveloper(Developer developer) {
-        log.info("Creating developer: {}", developer);
-        repository.create(developer);
-    }
-
-    public void updateDeveloper(Developer developer) {
-        log.info("Updating developer: {}", developer);
-        repository.update(developer);
+    public void saveDeveloper(Developer developer) {
+        log.info("Saving developer: {}", developer);
+        repository.save(developer);
     }
 
     public void deleteDeveloper(String login) {
         log.info("Deleting developer {}", login);
-        int deleted = repository.delete(login);
-        if (deleted < 1) {
+        if (!repository.findById(login)
+                .isPresent()) {
             throw new NotFoundException("Could not find developer with login: " + login);
         }
+        repository.deleteById(login);
     }
 
 }

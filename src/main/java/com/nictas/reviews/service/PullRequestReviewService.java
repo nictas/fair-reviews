@@ -132,7 +132,7 @@ public class PullRequestReviewService {
 
     private PullRequestReview createReview(Developer developer, PullRequestAssessment assessment) {
         Developer developerWithIncreasedScore = developer.withScore(developer.getScore() + assessment.getScore());
-        developerService.updateDeveloper(developerWithIncreasedScore);
+        developerService.saveDeveloper(developerWithIncreasedScore);
         PullRequestReview pullRequestReview = PullRequestReview.builder()
                 .multiplier(assessment.getMultiplier())
                 .pullRequestUrl(assessment.getPullRequestUrl())
@@ -147,7 +147,7 @@ public class PullRequestReviewService {
     private void decreaseDeveloperScore(PullRequestReview review) {
         Developer developer = review.getDeveloper();
         Developer developerWithDecreasedScore = developer.withScore(developer.getScore() - review.getScore());
-        developerService.updateDeveloper(developerWithDecreasedScore);
+        developerService.saveDeveloper(developerWithDecreasedScore);
     }
 
 }

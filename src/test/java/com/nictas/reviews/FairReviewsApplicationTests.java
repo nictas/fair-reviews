@@ -3,8 +3,6 @@ package com.nictas.reviews;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -12,26 +10,28 @@ import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import com.nictas.reviews.service.github.settings.GitHubSettings;
 import com.nictas.reviews.service.github.settings.GitHubSettingsProvider;
 import com.nictas.reviews.service.scheduled.DeveloperSyncService;
 
+@Testcontainers
 @SpringBootTest
-@ExtendWith(MockitoExtension.class)
 @ContextConfiguration(initializers = {FairReviewsApplicationTests.Initializer.class})
 class FairReviewsApplicationTests {
 
     private static final String SETTINGS_FOO_URL = "https://foo.example.com";
     private static final String SETTINGS_BAR_URL = "https://bar.example.com";
 
+    @Container
     public static final FairReviewsPostgreSQLContainer POSTGRESQL_CONTAINER = FairReviewsPostgreSQLContainer
             .getInstance();
 
     static class Initializer implements ApplicationContextInitializer<ConfigurableApplicationContext> {
 
         public void initialize(ConfigurableApplicationContext configurableApplicationContext) {
-            POSTGRESQL_CONTAINER.start();
             TestPropertyValues
                     .of("spring.datasource.url=" + POSTGRESQL_CONTAINER.getJdbcUrl(),
                             "spring.datasource.username=" + POSTGRESQL_CONTAINER.getUsername(),
