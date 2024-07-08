@@ -2,6 +2,7 @@ package com.nictas.reviews.service;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -76,10 +77,42 @@ public class PullRequestReviewService {
                                   List<String> assigneeExclusionList) {
         log.info("Assigning pull request {} to a developer with assignee list {} and assignee exclusion list {}",
                 pullRequestUrl, assigneeList, assigneeExclusionList);
+        List<String> previouslyAssignedDevelopers = getPreviouslyAssignedDeveloperLogins(pullRequestUrl);
+        assigneeExclusionList = merge(assigneeExclusionList, previouslyAssignedDevelopers);
+        log.info("Assignee exclusion list updated with previously assigned developers: {}", assigneeExclusionList);
+        verifyAssigneeList(assigneeList, previouslyAssignedDevelopers);
+        return assignInternal(pullRequestUrl, assigneeList, assigneeExclusionList);
+    }
+
+    private List<Developer> assignInternal(String pullRequestUrl, List<String> assigneeList,
+                                           List<String> assigneeExclusionList) {
         List<Developer> assignees = getAssignees(assigneeList, assigneeExclusionList);
         PullRequestAssessment assessment = pullRequestScoreComputer.computeScore(pullRequestUrl);
         return assignees.stream()
                 .map(assignee -> increaseDeveloperScore(assignee, assessment))
+                .toList();
+    }
+
+    private void verifyAssigneeList(List<String> assignees, List<String> previouslyAssignedDevelopers) {
+        List<String> conflictingAssignees = assignees.stream()
+                .filter(previouslyAssignedDevelopers::contains)
+                .distinct()
+                .toList();
+        if (!conflictingAssignees.isEmpty()) {
+            throw new IllegalArgumentException(
+                    String.format("Developers %s have already reviewed the PR before", conflictingAssignees));
+        }
+    }
+
+    private List<String> merge(List<String> list1, List<String> list2) {
+        return Stream.concat(list1.stream(), list2.stream())
+                .toList();
+    }
+
+    private List<String> getPreviouslyAssignedDeveloperLogins(String pullRequestUrl) {
+        Page<PullRequestReview> reviews = pullRequestReviewRepository.getByUrl(pullRequestUrl, Pageable.unpaged());
+        return reviews.map(PullRequestReview::getDeveloper)
+                .map(Developer::getLogin)
                 .toList();
     }
 
@@ -104,10 +137,11 @@ public class PullRequestReviewService {
         return developerWithIncreasedScore;
     }
 
-    private void decreaseDeveloperScore(PullRequestReview review) {
+    private Developer decreaseDeveloperScore(PullRequestReview review) {
         Developer developer = review.getDeveloper();
         Developer developerWithDecreasedScore = developer.withScore(developer.getScore() - review.getScore());
         developerService.updateDeveloper(developerWithDecreasedScore);
+        return developerWithDecreasedScore;
     }
 
 }

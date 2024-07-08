@@ -62,6 +62,7 @@ class PullRequestReviewServiceTest {
     private static final double PR_SCORE = 30.3;
     private static final Developer DEVELOPER_FOO = new Developer("foo", "foo@example.com");
     private static final Developer DEVELOPER_BAR = new Developer("bar", "bar@example.com");
+    private static final Developer DEVELOPER_BAZ = new Developer("baz", "baz@example.com");
     private static final PullRequestReview REVIEW_1 = PullRequestReview.builder()
             .id(UUID.fromString("91a8bdeb-8457-4905-bd08-9d2a46f27b92"))
             .pullRequestUrl("https://github.com/foo/bar/pull/87")
@@ -187,6 +188,7 @@ class PullRequestReviewServiceTest {
         when(developerService.getDeveloperWithLowestScore(loginExclusionList)).thenReturn(DEVELOPER_FOO);
         when(pullRequestScoreComputer.computeScore(PR_URL))
                 .thenReturn(new PullRequestAssessment(PR_URL, PR_FILE_DETAILS, PR_SCORE));
+        when(pullRequestReviewRepository.getByUrl(PR_URL, Pageable.unpaged())).thenReturn(Page.empty());
 
         List<Developer> assignees = pullRequestReviewService.assign(PR_URL, Collections.emptyList(),
                 loginExclusionList);
@@ -202,6 +204,7 @@ class PullRequestReviewServiceTest {
         when(developerService.getDeveloper(DEVELOPER_BAR.getLogin())).thenReturn(DEVELOPER_BAR);
         when(pullRequestScoreComputer.computeScore(PR_URL))
                 .thenReturn(new PullRequestAssessment(PR_URL, PR_FILE_DETAILS, PR_SCORE));
+        when(pullRequestReviewRepository.getByUrl(PR_URL, Pageable.unpaged())).thenReturn(Page.empty());
 
         List<Developer> assignees = pullRequestReviewService.assign(PR_URL,
                 List.of(DEVELOPER_FOO.getLogin(), DEVELOPER_BAR.getLogin()), Collections.emptyList());
@@ -219,6 +222,7 @@ class PullRequestReviewServiceTest {
         when(developerService.getDeveloper(DEVELOPER_BAR.getLogin())).thenReturn(DEVELOPER_BAR);
         when(pullRequestScoreComputer.computeScore(PR_URL))
                 .thenReturn(new PullRequestAssessment(PR_URL, PR_FILE_DETAILS, PR_SCORE));
+        when(pullRequestReviewRepository.getByUrl(PR_URL, Pageable.unpaged())).thenReturn(Page.empty());
 
         pullRequestReviewService.assign(PR_URL, List.of(DEVELOPER_FOO.getLogin(), DEVELOPER_BAR.getLogin()),
                 Collections.emptyList());
@@ -237,6 +241,49 @@ class PullRequestReviewServiceTest {
         assertEquals(PR_SCORE, reviewOfBar.getScore());
         assertEquals(DEVELOPER_FOO.withScore(PR_SCORE), reviewOfFoo.getDeveloper());
         assertEquals(DEVELOPER_BAR.withScore(PR_SCORE), reviewOfBar.getDeveloper());
+    }
+
+    @Test
+    void testAssignWithAlreadyExistingReviews() {
+        when(developerService.getDeveloperWithLowestScore(List.of(DEVELOPER_BAR.getLogin(), DEVELOPER_FOO.getLogin())))
+                .thenReturn(DEVELOPER_BAZ);
+        when(pullRequestScoreComputer.computeScore(PR_URL))
+                .thenReturn(new PullRequestAssessment(PR_URL, PR_FILE_DETAILS, PR_SCORE));
+        PullRequestReview review = PullRequestReview.builder()
+                .pullRequestUrl(PR_URL)
+                .pullRequestFileDetails(PR_FILE_DETAILS)
+                .score(PR_SCORE)
+                .developer(DEVELOPER_FOO)
+                .build();
+        Pageable pageable = Pageable.unpaged();
+        when(pullRequestReviewRepository.getByUrl(PR_URL, pageable))
+                .thenReturn(new PageImpl<>(List.of(review), pageable, 1));
+
+        List<Developer> assignees = pullRequestReviewService.assign(PR_URL, Collections.emptyList(),
+                List.of(DEVELOPER_BAR.getLogin()));
+        Developer expectedAssignee = DEVELOPER_BAZ.withScore(PR_SCORE);
+
+        assertEquals(List.of(expectedAssignee), assignees);
+        verify(developerService).updateDeveloper(expectedAssignee);
+    }
+
+    @Test
+    void testAssignWithConflictingAssignees() {
+        PullRequestReview review = PullRequestReview.builder()
+                .pullRequestUrl(PR_URL)
+                .pullRequestFileDetails(PR_FILE_DETAILS)
+                .score(PR_SCORE)
+                .developer(DEVELOPER_FOO)
+                .build();
+        Pageable pageable = Pageable.unpaged();
+        when(pullRequestReviewRepository.getByUrl(PR_URL, pageable))
+                .thenReturn(new PageImpl<>(List.of(review), pageable, 1));
+
+        List<String> assigneeList = List.of(DEVELOPER_FOO.getLogin(), DEVELOPER_BAR.getLogin());
+        List<String> assigneeExclusionList = Collections.emptyList();
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> pullRequestReviewService.assign(PR_URL, assigneeList, assigneeExclusionList));
+        assertEquals("Developers [foo] have already reviewed the PR before", exception.getMessage());
     }
 
     @Test
