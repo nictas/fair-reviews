@@ -1,6 +1,7 @@
 package com.nictas.reviews.domain;
 
 import java.time.OffsetDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -21,7 +22,8 @@ public class Multiplier {
     private UUID id = UUID.randomUUID();
     private final double defaultAdditionsMultiplier;
     private final double defaultDeletionsMultiplier;
-    private final List<FileMultiplier> fileMultipliers;
+    @Builder.Default
+    private List<FileMultiplier> fileMultipliers = Collections.emptyList();
     @Builder.Default
     private OffsetDateTime createdAt = OffsetDateTime.now();
 

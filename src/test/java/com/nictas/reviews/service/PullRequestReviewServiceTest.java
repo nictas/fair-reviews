@@ -8,6 +8,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -24,9 +26,11 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import com.nictas.reviews.domain.Developer;
+import com.nictas.reviews.domain.Multiplier;
 import com.nictas.reviews.domain.PullRequestFileDetails;
 import com.nictas.reviews.domain.PullRequestFileDetails.ChangedFile;
 import com.nictas.reviews.domain.PullRequestReview;
+import com.nictas.reviews.domain.Multiplier.FileMultiplier;
 import com.nictas.reviews.error.NotFoundException;
 import com.nictas.reviews.repository.PullRequestReviewRepository;
 import com.nictas.reviews.service.score.PullRequestScoreComputer;
@@ -89,6 +93,24 @@ class PullRequestReviewServiceTest {
                             .build())))
             .score(60.1)
             .developer(DEVELOPER_FOO)
+            .build();
+    private static final Multiplier MULTIPLIER = Multiplier.builder()
+            .id(UUID.fromString("2f7fc3e6-b54f-4593-aaca-98aeed3d6d02"))
+            .defaultAdditionsMultiplier(1.0)
+            .defaultDeletionsMultiplier(0.2)
+            .fileMultipliers(List.of( //
+                    FileMultiplier.builder()
+                            .fileExtension(".java")
+                            .additionsMultiplier(2.0)
+                            .deletionsMultiplier(0.4)
+                            .build(), //
+                    FileMultiplier.builder()
+                            .fileExtension(".yaml")
+                            .additionsMultiplier(0.5)
+                            .deletionsMultiplier(0.2)
+                            .build() //
+            ))
+            .createdAt(OffsetDateTime.of(2024, 3, 3, 17, 15, 0, 0, ZoneOffset.UTC))
             .build();
 
     @Mock
@@ -182,7 +204,7 @@ class PullRequestReviewServiceTest {
         List<String> loginExclusionList = List.of(DEVELOPER_BAR.getLogin());
         when(developerService.getDeveloperWithLowestScore(loginExclusionList)).thenReturn(DEVELOPER_FOO);
         when(pullRequestScoreComputer.computeScore(PR_URL))
-                .thenReturn(new PullRequestAssessment(PR_URL, PR_FILE_DETAILS, PR_SCORE));
+                .thenReturn(new PullRequestAssessment(PR_URL, PR_FILE_DETAILS, PR_SCORE, MULTIPLIER));
         when(pullRequestReviewRepository.getByUrl(PR_URL, Pageable.unpaged())).thenReturn(Page.empty());
 
         List<PullRequestReview> reviews = pullRequestReviewService.assign(PR_URL, Collections.emptyList(),
@@ -202,7 +224,7 @@ class PullRequestReviewServiceTest {
         when(developerService.getDeveloper(DEVELOPER_FOO.getLogin())).thenReturn(DEVELOPER_FOO);
         when(developerService.getDeveloper(DEVELOPER_BAR.getLogin())).thenReturn(DEVELOPER_BAR);
         when(pullRequestScoreComputer.computeScore(PR_URL))
-                .thenReturn(new PullRequestAssessment(PR_URL, PR_FILE_DETAILS, PR_SCORE));
+                .thenReturn(new PullRequestAssessment(PR_URL, PR_FILE_DETAILS, PR_SCORE, MULTIPLIER));
         when(pullRequestReviewRepository.getByUrl(PR_URL, Pageable.unpaged())).thenReturn(Page.empty());
 
         List<PullRequestReview> reviews = pullRequestReviewService.assign(PR_URL,
@@ -226,7 +248,7 @@ class PullRequestReviewServiceTest {
         when(developerService.getDeveloper(DEVELOPER_FOO.getLogin())).thenReturn(DEVELOPER_FOO);
         when(developerService.getDeveloper(DEVELOPER_BAR.getLogin())).thenReturn(DEVELOPER_BAR);
         when(pullRequestScoreComputer.computeScore(PR_URL))
-                .thenReturn(new PullRequestAssessment(PR_URL, PR_FILE_DETAILS, PR_SCORE));
+                .thenReturn(new PullRequestAssessment(PR_URL, PR_FILE_DETAILS, PR_SCORE, MULTIPLIER));
         when(pullRequestReviewRepository.getByUrl(PR_URL, Pageable.unpaged())).thenReturn(Page.empty());
 
         List<PullRequestReview> reviews = pullRequestReviewService.assign(PR_URL,
@@ -241,6 +263,8 @@ class PullRequestReviewServiceTest {
         assertEquals(PR_FILE_DETAILS, reviewOfBar.getPullRequestFileDetails());
         assertEquals(PR_SCORE, reviewOfFoo.getScore());
         assertEquals(PR_SCORE, reviewOfBar.getScore());
+        assertEquals(MULTIPLIER, reviewOfFoo.getMultiplier());
+        assertEquals(MULTIPLIER, reviewOfBar.getMultiplier());
         assertEquals(DEVELOPER_FOO.withScore(PR_SCORE), reviewOfFoo.getDeveloper());
         assertEquals(DEVELOPER_BAR.withScore(PR_SCORE), reviewOfBar.getDeveloper());
 
@@ -253,7 +277,7 @@ class PullRequestReviewServiceTest {
         when(developerService.getDeveloperWithLowestScore(List.of(DEVELOPER_BAR.getLogin(), DEVELOPER_FOO.getLogin())))
                 .thenReturn(DEVELOPER_BAZ);
         when(pullRequestScoreComputer.computeScore(PR_URL))
-                .thenReturn(new PullRequestAssessment(PR_URL, PR_FILE_DETAILS, PR_SCORE));
+                .thenReturn(new PullRequestAssessment(PR_URL, PR_FILE_DETAILS, PR_SCORE, MULTIPLIER));
         PullRequestReview existingReview = PullRequestReview.builder()
                 .pullRequestUrl(PR_URL)
                 .pullRequestFileDetails(PR_FILE_DETAILS)
