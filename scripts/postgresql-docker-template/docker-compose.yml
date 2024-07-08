@@ -1,0 +1,11 @@
+version: '3'
+
+services:
+  fair-reviews-db:
+    image: postgres:16
+    environment: # The values here should match the ones in application-local.yaml.
+      POSTGRES_DB: fair-reviews
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: fair-reviews
+    ports:
+      - "5432:5432"
