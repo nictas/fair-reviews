@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -215,6 +216,7 @@ class PullRequestReviewServiceTest {
         when(pullRequestScoreComputer.computeScore(PR_URL))
                 .thenReturn(new PullRequestAssessment(PR_URL, PR_FILE_DETAILS, PR_SCORE, MULTIPLIER));
         when(pullRequestReviewRepository.findByPullRequestUrl(PR_URL, Pageable.unpaged())).thenReturn(Page.empty());
+        when(pullRequestReviewRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         List<PullRequestReview> reviews = pullRequestReviewService.assign(PR_URL, Collections.emptyList(),
                 loginExclusionList);
@@ -235,6 +237,7 @@ class PullRequestReviewServiceTest {
         when(pullRequestScoreComputer.computeScore(PR_URL))
                 .thenReturn(new PullRequestAssessment(PR_URL, PR_FILE_DETAILS, PR_SCORE, MULTIPLIER));
         when(pullRequestReviewRepository.findByPullRequestUrl(PR_URL, Pageable.unpaged())).thenReturn(Page.empty());
+        when(pullRequestReviewRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         List<PullRequestReview> reviews = pullRequestReviewService.assign(PR_URL,
                 List.of(DEVELOPER_FOO.getLogin(), DEVELOPER_BAR.getLogin()), Collections.emptyList());
@@ -259,6 +262,7 @@ class PullRequestReviewServiceTest {
         when(pullRequestScoreComputer.computeScore(PR_URL))
                 .thenReturn(new PullRequestAssessment(PR_URL, PR_FILE_DETAILS, PR_SCORE, MULTIPLIER));
         when(pullRequestReviewRepository.findByPullRequestUrl(PR_URL, Pageable.unpaged())).thenReturn(Page.empty());
+        when(pullRequestReviewRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         List<PullRequestReview> reviews = pullRequestReviewService.assign(PR_URL,
                 List.of(DEVELOPER_FOO.getLogin(), DEVELOPER_BAR.getLogin()), Collections.emptyList());
@@ -296,6 +300,7 @@ class PullRequestReviewServiceTest {
         Pageable pageable = Pageable.unpaged();
         when(pullRequestReviewRepository.findByPullRequestUrl(PR_URL, pageable))
                 .thenReturn(new PageImpl<>(List.of(existingReview), pageable, 1));
+        when(pullRequestReviewRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         List<PullRequestReview> reviews = pullRequestReviewService.assign(PR_URL, Collections.emptyList(),
                 List.of(DEVELOPER_BAR.getLogin()));
