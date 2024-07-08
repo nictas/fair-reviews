@@ -53,8 +53,9 @@ public class InMemoryPullRequestReviewRepository implements PullRequestReviewRep
 
     @Override
     public void update(PullRequestReview pullRequestReview) {
-        delete(pullRequestReview.getId());
-        create(pullRequestReview);
+        UUID id = pullRequestReview.getId();
+        pullRequestReviews.removeIf(candidate -> id.equals(candidate.getId()));
+        pullRequestReviews.add(pullRequestReview);
     }
 
     @Override
