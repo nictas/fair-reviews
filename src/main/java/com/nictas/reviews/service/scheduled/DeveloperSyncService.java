@@ -1,17 +1,19 @@
 package com.nictas.reviews.service.scheduled;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import com.nictas.reviews.domain.Developer;
 import com.nictas.reviews.repository.DeveloperRepository;
+import com.nictas.reviews.repository.PullRequestReviewRepository;
 import com.nictas.reviews.service.github.GitHubClientProvider;
 
 import jakarta.transaction.Transactional;
@@ -21,19 +23,24 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class DeveloperSyncService {
 
+    static final Developer DUMMY_DEVELOPER = new Developer("dummy", "dummy@test.com");
+
     private final GitHubClientProvider clientProvider;
     private final DeveloperRepository developerRepository;
+    private final PullRequestReviewRepository pullRequestReviewRepository;
     private final String developersUrl;
     private final String developersOrg;
     private final String developersTeam;
 
     @Autowired
     public DeveloperSyncService(GitHubClientProvider clientProvider, DeveloperRepository developerRepository,
+                                PullRequestReviewRepository pullRequestReviewRepository,
                                 @Value("${developers.github.url}") String developersUrl,
                                 @Value("${developers.github.org}") String developersOrg,
                                 @Value("${developers.github.team}") String developersTeam) {
         this.clientProvider = clientProvider;
         this.developerRepository = developerRepository;
+        this.pullRequestReviewRepository = pullRequestReviewRepository;
         this.developersUrl = developersUrl;
         this.developersOrg = developersOrg;
         this.developersTeam = developersTeam;
@@ -58,37 +65,45 @@ public class DeveloperSyncService {
 
     private void updateDevelopers(List<Developer> developers) {
         List<Developer> existingDevelopers = new ArrayList<>();
-        List<Developer> nonExistingDevelopers = new ArrayList<>();
+        List<Developer> newDevelopers = new ArrayList<>();
         for (Developer developer : developers) {
             var existingDeveloper = developerRepository.findById(developer.getLogin());
             if (existingDeveloper.isPresent()) {
                 existingDevelopers.add(existingDeveloper.get());
             } else {
-                nonExistingDevelopers.add(developer);
+                newDevelopers.add(developer);
             }
         }
         log.info("Existing developers: {}", existingDevelopers);
-        log.info("Non-existing developers: {}", nonExistingDevelopers);
-        if (!nonExistingDevelopers.isEmpty()) {
-            createNonExistingDevelopers(nonExistingDevelopers, existingDevelopers);
+        log.info("New developers: {}", newDevelopers);
+        if (!newDevelopers.isEmpty()) {
+            createNewDevelopers(newDevelopers);
         }
     }
 
-    private void createNonExistingDevelopers(List<Developer> nonExistingDevelopers,
-                                             List<Developer> existingDevelopers) {
-        double startingScore = computeStartingScore(existingDevelopers);
-        log.info("Starting score for non-existing developers: {}", startingScore);
-        nonExistingDevelopers.stream()
-                .map(developer -> developer.withScore(startingScore))
-                .forEach(developer -> {
-                    log.info("Creating developer: {}", developer);
-                    developerRepository.save(developer);
-                });
+    private void createNewDevelopers(List<Developer> developers) {
+        Developer startingPoint = developerRepository.findWithLowestScore(Collections.emptyList())
+                .orElse(DUMMY_DEVELOPER);
+        log.info("Replicating history of developer {} as a starting point for new developers", startingPoint);
+        for (Developer developer : developers) {
+            createNewDeveloper(developer, startingPoint);
+            createNewDeveloperHistory(developer, startingPoint);
+        }
     }
 
-    private double computeStartingScore(List<Developer> existingDevelopers) {
-        return existingDevelopers.stream()
-                .collect(Collectors.averagingDouble(Developer::getScore));
+    private void createNewDeveloper(Developer developer, Developer startingPoint) {
+        Developer developerWithStartingScore = developer.withScore(startingPoint.getScore());
+        log.info("Creating developer: {}", developerWithStartingScore);
+        developerRepository.save(developerWithStartingScore);
+    }
+
+    private void createNewDeveloperHistory(Developer developer, Developer startingPoint) {
+        pullRequestReviewRepository.findByDeveloperLogin(startingPoint.getLogin(), Pageable.unpaged())
+                .map(review -> review.withDeveloper(developer))
+                .forEach(review -> {
+                    log.info("Creating PR review: {}", review);
+                    pullRequestReviewRepository.save(review);
+                });
     }
 
 }
