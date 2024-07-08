@@ -9,12 +9,23 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.util.TestPropertyValues;
+import org.springframework.context.ApplicationContextInitializer;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.test.context.ContextConfiguration;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
+import com.nictas.reviews.FairReviewsPostgreSQLContainer;
 import com.nictas.reviews.domain.Developer;
 import com.nictas.reviews.domain.FileMultiplier;
 import com.nictas.reviews.domain.Multiplier;
@@ -22,7 +33,27 @@ import com.nictas.reviews.domain.PullRequestFileDetails;
 import com.nictas.reviews.domain.PullRequestFileDetails.ChangedFile;
 import com.nictas.reviews.domain.PullRequestReview;
 
-class InMemoryPullRequestReviewRepositoryTest {
+@Testcontainers
+@DataJpaTest
+@ContextConfiguration(initializers = {PullRequestReviewRepositoryTest.Initializer.class})
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+class PullRequestReviewRepositoryTest {
+
+    @Container
+    public static final FairReviewsPostgreSQLContainer POSTGRESQL_CONTAINER = FairReviewsPostgreSQLContainer
+            .getInstance();
+
+    static class Initializer implements ApplicationContextInitializer<ConfigurableApplicationContext> {
+
+        public void initialize(ConfigurableApplicationContext configurableApplicationContext) {
+            TestPropertyValues
+                    .of("spring.datasource.url=" + POSTGRESQL_CONTAINER.getJdbcUrl(),
+                            "spring.datasource.username=" + POSTGRESQL_CONTAINER.getUsername(),
+                            "spring.datasource.password=" + POSTGRESQL_CONTAINER.getPassword())
+                    .applyTo(configurableApplicationContext.getEnvironment());
+        }
+
+    }
 
     private static final Multiplier MULTIPLIER_1 = Multiplier.builder()
             .id(UUID.fromString("2f7fc3e6-b54f-4593-aaca-98aeed3d6d02"))
@@ -135,76 +166,89 @@ class InMemoryPullRequestReviewRepositoryTest {
             .multiplier(MULTIPLIER_2)
             .build();
 
-    private PullRequestReviewRepository pullRequestReviewRepository = new InMemoryPullRequestReviewRepository();
+    @Autowired
+    private DeveloperRepository developerRepository;
+    @Autowired
+    private MultiplierRepository multiplierRepository;
+    @Autowired
+    private PullRequestReviewRepository pullRequestReviewRepository;
+
+    @BeforeEach
+    void setUp() {
+        developerRepository.save(DEVELOPER_FOO);
+        developerRepository.save(DEVELOPER_BAR);
+        multiplierRepository.save(MULTIPLIER_1);
+        multiplierRepository.save(MULTIPLIER_2);
+    }
 
     @Test
-    void testCreateAndGet() {
-        pullRequestReviewRepository.create(REVIEW_1);
+    void testSaveAndFindById() {
+        pullRequestReviewRepository.save(REVIEW_1);
 
-        PullRequestReview review = pullRequestReviewRepository.get(REVIEW_1.getId())
+        PullRequestReview review = pullRequestReviewRepository.findById(REVIEW_1.getId())
                 .get();
         assertEquals(REVIEW_1, review);
     }
 
     @Test
-    void testGetWithZeroReviews() {
-        Optional<PullRequestReview> review = pullRequestReviewRepository.get(REVIEW_1.getId());
+    void testFindByIdWithZeroReviews() {
+        Optional<PullRequestReview> review = pullRequestReviewRepository.findById(REVIEW_1.getId());
         assertTrue(review.isEmpty());
     }
 
     @Test
-    void testGetAll() {
+    void testFindAll() {
         List<PullRequestReview> reviews = List.of(REVIEW_1, REVIEW_2, REVIEW_3);
-        reviews.forEach(pullRequestReviewRepository::create);
+        reviews.forEach(pullRequestReviewRepository::save);
 
         Pageable pageable = Pageable.unpaged();
-        Page<PullRequestReview> reviewsPage = pullRequestReviewRepository.getAll(pageable);
+        Page<PullRequestReview> reviewsPage = pullRequestReviewRepository.findAll(pageable);
         Page<PullRequestReview> expectedReviewsPage = new PageImpl<>(reviews, pageable, reviews.size());
         assertEquals(expectedReviewsPage, reviewsPage);
     }
 
     @Test
-    void testGetAllWithPagination() {
+    void testFindAllWithPagination() {
         List<PullRequestReview> reviews = List.of(REVIEW_1, REVIEW_2, REVIEW_3);
-        reviews.forEach(pullRequestReviewRepository::create);
+        reviews.forEach(pullRequestReviewRepository::save);
 
         Pageable pageable = PageRequest.of(1, 1);
-        Page<PullRequestReview> reviewsPage = pullRequestReviewRepository.getAll(pageable);
+        Page<PullRequestReview> reviewsPage = pullRequestReviewRepository.findAll(pageable);
         Page<PullRequestReview> expectedReviewsPage = new PageImpl<>(List.of(REVIEW_2), pageable, reviews.size());
         assertEquals(expectedReviewsPage, reviewsPage);
     }
 
     @Test
-    void testGetByUrl() {
+    void testFindByPullRequestUrl() {
         List<PullRequestReview> reviews = List.of(REVIEW_1, REVIEW_2, REVIEW_3, REVIEW_4);
-        reviews.forEach(pullRequestReviewRepository::create);
+        reviews.forEach(pullRequestReviewRepository::save);
 
         Pageable pageable = Pageable.unpaged();
-        Page<PullRequestReview> reviewsPage = pullRequestReviewRepository.getByUrl(REVIEW_3.getPullRequestUrl(),
-                pageable);
+        Page<PullRequestReview> reviewsPage = pullRequestReviewRepository
+                .findByPullRequestUrl(REVIEW_3.getPullRequestUrl(), pageable);
         Page<PullRequestReview> expectedReviewsPage = new PageImpl<>(List.of(REVIEW_3, REVIEW_4), pageable, 2);
         assertEquals(expectedReviewsPage, reviewsPage);
     }
 
     @Test
-    void testGetByUrlWithPagination() {
+    void testFindByPullRequestUrlWithPagination() {
         List<PullRequestReview> reviews = List.of(REVIEW_1, REVIEW_2, REVIEW_3, REVIEW_4);
-        reviews.forEach(pullRequestReviewRepository::create);
+        reviews.forEach(pullRequestReviewRepository::save);
 
         Pageable pageable = PageRequest.of(1, 1);
-        Page<PullRequestReview> reviewsPage = pullRequestReviewRepository.getByUrl(REVIEW_3.getPullRequestUrl(),
-                pageable);
+        Page<PullRequestReview> reviewsPage = pullRequestReviewRepository
+                .findByPullRequestUrl(REVIEW_3.getPullRequestUrl(), pageable);
         Page<PullRequestReview> expectedReviewsPage = new PageImpl<>(List.of(REVIEW_4), pageable, 2);
         assertEquals(expectedReviewsPage, reviewsPage);
     }
 
     @Test
-    void testGetByDeveloperLogin() {
+    void testFindByDeveloperLogin() {
         List<PullRequestReview> reviews = List.of(REVIEW_1, REVIEW_2, REVIEW_3, REVIEW_4);
-        reviews.forEach(pullRequestReviewRepository::create);
+        reviews.forEach(pullRequestReviewRepository::save);
 
         Pageable pageable = Pageable.unpaged();
-        Page<PullRequestReview> reviewsPage = pullRequestReviewRepository.getByDeveloperLogin(DEVELOPER_FOO.getLogin(),
+        Page<PullRequestReview> reviewsPage = pullRequestReviewRepository.findByDeveloperLogin(DEVELOPER_FOO.getLogin(),
                 pageable);
         Page<PullRequestReview> expectedReviewsPage = new PageImpl<>(List.of(REVIEW_1, REVIEW_2, REVIEW_4), pageable,
                 3);
@@ -212,47 +256,46 @@ class InMemoryPullRequestReviewRepositoryTest {
     }
 
     @Test
-    void testGetByDeveloperLoginWithPagination() {
+    void tesFindByDeveloperLoginWithPagination() {
         List<PullRequestReview> reviews = List.of(REVIEW_1, REVIEW_2, REVIEW_3, REVIEW_4);
-        reviews.forEach(pullRequestReviewRepository::create);
+        reviews.forEach(pullRequestReviewRepository::save);
 
         Pageable pageable = PageRequest.of(0, 2);
-        Page<PullRequestReview> reviewsPage = pullRequestReviewRepository.getByDeveloperLogin(DEVELOPER_FOO.getLogin(),
+        Page<PullRequestReview> reviewsPage = pullRequestReviewRepository.findByDeveloperLogin(DEVELOPER_FOO.getLogin(),
                 pageable);
         Page<PullRequestReview> expectedReviewsPage = new PageImpl<>(List.of(REVIEW_1, REVIEW_2), pageable, 3);
         assertEquals(expectedReviewsPage, reviewsPage);
     }
 
     @Test
-    void testGetWithDifferentMultiplierIds() {
+    void testFindWithDifferentMultiplierIds() {
         List<PullRequestReview> reviews = List.of(REVIEW_1, REVIEW_2, REVIEW_3, REVIEW_4);
-        reviews.forEach(pullRequestReviewRepository::create);
+        reviews.forEach(pullRequestReviewRepository::save);
 
         Pageable pageable = PageRequest.of(0, 1);
         Page<PullRequestReview> reviewsPage = pullRequestReviewRepository
-                .getWithDifferentMultiplierIds(MULTIPLIER_1.getId(), pageable);
+                .findWithDifferentMultiplierIds(MULTIPLIER_1.getId(), pageable);
         Page<PullRequestReview> expectedReviewsPage = new PageImpl<>(List.of(REVIEW_3), pageable, 2);
         assertEquals(expectedReviewsPage, reviewsPage);
     }
 
     @Test
     void testUpdate() {
-        pullRequestReviewRepository.create(REVIEW_1);
-        pullRequestReviewRepository.update(REVIEW_1.withScore(REVIEW_1.getScore() + 1.));
+        pullRequestReviewRepository.save(REVIEW_1);
+        pullRequestReviewRepository.save(REVIEW_1.withScore(REVIEW_1.getScore() + 1.));
 
-        PullRequestReview review = pullRequestReviewRepository.get(REVIEW_1.getId())
+        PullRequestReview review = pullRequestReviewRepository.findById(REVIEW_1.getId())
                 .get();
         assertEquals(21.7, review.getScore());
     }
 
     @Test
-    void testDelete() {
-        pullRequestReviewRepository.create(REVIEW_1);
+    void testDeleteById() {
+        pullRequestReviewRepository.save(REVIEW_1);
 
-        int deleted = pullRequestReviewRepository.delete(REVIEW_1.getId());
-        assertEquals(1, deleted);
+        pullRequestReviewRepository.deleteById(REVIEW_1.getId());
 
-        Optional<PullRequestReview> review = pullRequestReviewRepository.get(REVIEW_1.getId());
+        Optional<PullRequestReview> review = pullRequestReviewRepository.findById(REVIEW_1.getId());
         assertTrue(review.isEmpty());
     }
 

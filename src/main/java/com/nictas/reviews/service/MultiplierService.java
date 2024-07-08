@@ -1,6 +1,6 @@
 package com.nictas.reviews.service;
 
-import java.util.Optional;
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,13 +12,15 @@ import com.nictas.reviews.domain.Multiplier;
 import com.nictas.reviews.error.NotFoundException;
 import com.nictas.reviews.repository.MultiplierRepository;
 
+import jakarta.annotation.PostConstruct;
+import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
 public class MultiplierService {
 
-    static final Multiplier DEFAULT_MULTIPLIER = Multiplier.builder()
+    public static final Multiplier DEFAULT_MULTIPLIER = Multiplier.builder()
             .id(UUID.fromString("a49eb29b-d727-4493-a27b-17b2a8d15104"))
             .defaultAdditionsMultiplier(1.0)
             .defaultDeletionsMultiplier(0.2)
@@ -29,6 +31,15 @@ public class MultiplierService {
     @Autowired
     public MultiplierService(MultiplierRepository repository) {
         this.repository = repository;
+    }
+
+    @PostConstruct
+    @Transactional
+    public void saveDefaultMultiplier() {
+        List<Multiplier> multipliers = repository.findAll();
+        if (multipliers.isEmpty()) {
+            saveMultiplier(DEFAULT_MULTIPLIER);
+        }
     }
 
     public Page<Multiplier> getAllMultipliers(Pageable pageable) {
@@ -44,12 +55,8 @@ public class MultiplierService {
 
     public Multiplier getLatestMultiplier() {
         log.info("Getting latest multiplier");
-        Optional<Multiplier> multiplier = repository.findLatest();
-        if (multiplier.isPresent()) {
-            return multiplier.get();
-        }
-        saveMultiplier(DEFAULT_MULTIPLIER);
-        return DEFAULT_MULTIPLIER;
+        return repository.findLatest()
+                .orElseThrow(() -> new NotFoundException("Could not find latest multiplier"));
     }
 
     public Multiplier saveMultiplier(Multiplier multiplier) {

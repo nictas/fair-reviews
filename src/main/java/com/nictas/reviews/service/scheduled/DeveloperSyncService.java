@@ -14,6 +14,7 @@ import com.nictas.reviews.domain.Developer;
 import com.nictas.reviews.repository.DeveloperRepository;
 import com.nictas.reviews.service.github.GitHubClientProvider;
 
+import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -39,6 +40,7 @@ public class DeveloperSyncService {
     }
 
     @Scheduled(initialDelay = 0, fixedRate = 5, timeUnit = TimeUnit.MINUTES)
+    @Transactional
     public void fetchAndUpdateDevelopers() {
         log.info("Synchronizing developers with GitHub {} organization {} and team {}", developersUrl, developersOrg,
                 developersTeam);

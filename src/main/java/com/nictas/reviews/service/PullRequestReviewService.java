@@ -37,45 +37,40 @@ public class PullRequestReviewService {
 
     public Page<PullRequestReview> getAllReviews(Pageable pageable) {
         log.info("Getting all pull request reviews");
-        return pullRequestReviewRepository.getAll(pageable);
+        return pullRequestReviewRepository.findAll(pageable);
     }
 
     public PullRequestReview getReview(UUID id) {
         log.info("Getting pull request review {}", id);
-        return pullRequestReviewRepository.get(id)
+        return pullRequestReviewRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Could not find review with ID: " + id));
     }
 
     public Page<PullRequestReview> getReviewsByUrl(String pullRequestUrl, Pageable pageable) {
         log.info("Getting all pull request reviews with URL {}", pullRequestUrl);
-        return pullRequestReviewRepository.getByUrl(pullRequestUrl, pageable);
+        return pullRequestReviewRepository.findByPullRequestUrl(pullRequestUrl, pageable);
     }
 
     public Page<PullRequestReview> getReviewsByDeveloperLogin(String developerLogin, Pageable pageable) {
         log.info("Getting all pull request reviews for developer {}", developerLogin);
-        return pullRequestReviewRepository.getByDeveloperLogin(developerLogin, pageable);
+        return pullRequestReviewRepository.findByDeveloperLogin(developerLogin, pageable);
     }
 
     public Page<PullRequestReview> getReviewsWithDifferentMultiplierIds(UUID id, Pageable pageable) {
         log.info("Getting all pull request reviews with multiplier different than {}", id);
-        return pullRequestReviewRepository.getWithDifferentMultiplierIds(id, pageable);
+        return pullRequestReviewRepository.findWithDifferentMultiplierIds(id, pageable);
     }
 
-    public void createReview(PullRequestReview pullRequestReview) {
-        log.info("Creating pull request review: {}");
-        pullRequestReviewRepository.create(pullRequestReview);
-    }
-
-    public void updateReview(PullRequestReview pullRequestReview) {
-        log.info("Updating pull request review: {}");
-        pullRequestReviewRepository.update(pullRequestReview);
+    public void saveReview(PullRequestReview pullRequestReview) {
+        log.info("Saving pull request review: {}");
+        pullRequestReviewRepository.save(pullRequestReview);
     }
 
     public void deleteReview(UUID id) {
         log.info("Deleting pull request review {}", id);
         var review = getReview(id);
         decreaseDeveloperScore(review);
-        pullRequestReviewRepository.delete(id);
+        pullRequestReviewRepository.deleteById(id);
     }
 
     public List<PullRequestReview> assign(String pullRequestUrl, List<String> assigneeList,
@@ -115,7 +110,8 @@ public class PullRequestReviewService {
     }
 
     private List<String> getPreviouslyAssignedDeveloperLogins(String pullRequestUrl) {
-        Page<PullRequestReview> reviews = pullRequestReviewRepository.getByUrl(pullRequestUrl, Pageable.unpaged());
+        Page<PullRequestReview> reviews = pullRequestReviewRepository.findByPullRequestUrl(pullRequestUrl,
+                Pageable.unpaged());
         return reviews.map(PullRequestReview::getDeveloper)
                 .map(Developer::getLogin)
                 .toList();
@@ -140,7 +136,7 @@ public class PullRequestReviewService {
                 .score(assessment.getScore())
                 .developer(developerWithIncreasedScore)
                 .build();
-        pullRequestReviewRepository.create(pullRequestReview);
+        pullRequestReviewRepository.save(pullRequestReview);
         return pullRequestReview;
     }
 
