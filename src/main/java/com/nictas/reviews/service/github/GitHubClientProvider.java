@@ -1,8 +1,8 @@
 package com.nictas.reviews.service.github;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
 
 import org.kohsuke.github.GitHub;
@@ -32,7 +32,7 @@ public class GitHubClientProvider {
                          BiFunction<String, String, GitHub> delegateConstructor) {
         this.settingsProvider = settingsProvider;
         this.delegateConstructor = delegateConstructor;
-        this.clientCache = new HashMap<>();
+        this.clientCache = new ConcurrentHashMap<>();
     }
 
     public GitHubClient getClientForUrl(String url) {

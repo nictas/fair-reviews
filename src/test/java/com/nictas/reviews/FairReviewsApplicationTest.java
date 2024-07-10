@@ -16,6 +16,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import com.nictas.reviews.service.github.settings.GitHubSettings;
 import com.nictas.reviews.service.github.settings.GitHubSettingsProvider;
 import com.nictas.reviews.service.scheduled.DeveloperSyncService;
+import com.nictas.reviews.service.scheduled.OrganizationAdminsSyncService;
 
 @Testcontainers
 @SpringBootTest
@@ -46,6 +47,8 @@ class FairReviewsApplicationTest {
 
     @MockBean
     private DeveloperSyncService developerSyncService;
+    @MockBean
+    private OrganizationAdminsSyncService organizationAdminsSyncService;
 
     @Test
     void contextLoads() {
