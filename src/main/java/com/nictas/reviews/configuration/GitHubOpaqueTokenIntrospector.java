@@ -19,6 +19,7 @@ import com.nictas.reviews.domain.Developer;
 import com.nictas.reviews.service.github.GitHubClient;
 import com.nictas.reviews.service.github.GitHubClientException;
 import com.nictas.reviews.service.github.GitHubClientProvider;
+import com.nictas.reviews.service.scheduled.OrganizationAdminsSyncService;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -27,16 +28,16 @@ import lombok.extern.slf4j.Slf4j;
 public class GitHubOpaqueTokenIntrospector implements OpaqueTokenIntrospector {
 
     private final GitHubClientProvider clientProvider;
+    private final OrganizationAdminsSyncService organizationAdminsSyncService;
     private final String developersUrl;
-    private final String developersOrg;
 
     @Autowired
     public GitHubOpaqueTokenIntrospector(GitHubClientProvider clientProvider,
-                                         @Value("${developers.github.url}") String developersUrl,
-                                         @Value("${developers.github.org}") String developersOrg) {
+                                         OrganizationAdminsSyncService organizationAdminsSyncService,
+                                         @Value("${developers.github.url}") String developersUrl) {
         this.clientProvider = clientProvider;
+        this.organizationAdminsSyncService = organizationAdminsSyncService;
         this.developersUrl = developersUrl;
-        this.developersOrg = developersOrg;
     }
 
     @Override
@@ -53,7 +54,7 @@ public class GitHubOpaqueTokenIntrospector implements OpaqueTokenIntrospector {
 
     private OAuth2AuthenticatedPrincipal introspectToken(String token) {
         GitHubClient client = clientProvider.getClientForUrl(developersUrl, token);
-        List<Developer> organizationAdmins = client.getOrganizationAdmins(developersOrg);
+        List<Developer> organizationAdmins = organizationAdminsSyncService.getOrganizationAdmins();
         Developer user = client.getMyself();
 
         Set<GrantedAuthority> authorities = getGrantedAuthorities(user, organizationAdmins);

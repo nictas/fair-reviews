@@ -21,13 +21,13 @@ import com.nictas.reviews.domain.Developer;
 import com.nictas.reviews.service.github.GitHubClient;
 import com.nictas.reviews.service.github.GitHubClientException;
 import com.nictas.reviews.service.github.GitHubClientProvider;
+import com.nictas.reviews.service.scheduled.OrganizationAdminsSyncService;
 
 @ExtendWith(MockitoExtension.class)
 class GitHubOpaqueTokenIntrospectorTest {
 
     private static final String TOKEN = "test";
     private static final String DEVELOPERS_URL = "https://example.com";
-    private static final String DEVELOPERS_ORG = "foo";
     private static final Developer DEVELOPER_FOO = new Developer("foo", "foo@example.com");
     private static final Developer DEVELOPER_BAR = new Developer("bar", "bar@example.com");
     private static final Developer DEVELOPER_BAZ = new Developer("baz", "baz@example.com");
@@ -36,18 +36,20 @@ class GitHubOpaqueTokenIntrospectorTest {
     private GitHubClientProvider clientProvider;
     @Mock
     private GitHubClient client;
+    @Mock
+    private OrganizationAdminsSyncService organizationAdminsSyncService;
     private GitHubOpaqueTokenIntrospector introspector;
 
     @BeforeEach
     void setUp() {
         when(clientProvider.getClientForUrl(DEVELOPERS_URL, TOKEN)).thenReturn(client);
-        introspector = new GitHubOpaqueTokenIntrospector(clientProvider, DEVELOPERS_URL, DEVELOPERS_ORG);
+        introspector = new GitHubOpaqueTokenIntrospector(clientProvider, organizationAdminsSyncService, DEVELOPERS_URL);
     }
 
     @Test
     void testIntrospectSuccess() {
         when(client.getMyself()).thenReturn(DEVELOPER_FOO);
-        when(client.getOrganizationAdmins(DEVELOPERS_ORG)).thenReturn(List.of(DEVELOPER_BAR, DEVELOPER_BAZ));
+        when(organizationAdminsSyncService.getOrganizationAdmins()).thenReturn(List.of(DEVELOPER_BAR, DEVELOPER_BAZ));
 
         OAuth2AuthenticatedPrincipal principal = introspector.introspect(TOKEN);
 
@@ -62,7 +64,7 @@ class GitHubOpaqueTokenIntrospectorTest {
     @Test
     void testIntrospectAdminSuccess() {
         when(client.getMyself()).thenReturn(DEVELOPER_BAZ);
-        when(client.getOrganizationAdmins(DEVELOPERS_ORG)).thenReturn(List.of(DEVELOPER_BAR, DEVELOPER_BAZ));
+        when(organizationAdminsSyncService.getOrganizationAdmins()).thenReturn(List.of(DEVELOPER_BAR, DEVELOPER_BAZ));
 
         OAuth2AuthenticatedPrincipal principal = introspector.introspect(TOKEN);
 
