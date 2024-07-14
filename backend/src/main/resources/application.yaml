@@ -1,5 +1,5 @@
 spring:
-  application:
-    name: Fair Reviews
-  liquibase:
-    change-log: classpath:changelog/liquibase-changelog.yaml       
+   application:
+      name: Fair Reviews
+   liquibase:
+      change-log: classpath:changelog/liquibase-changelog.yaml

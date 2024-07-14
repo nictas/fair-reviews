@@ -1,0 +1,14 @@
+spring:
+   security:
+      oauth2:
+         client:
+            registration:
+               github:
+                  client-id: foo
+                  client-secret: bar
+            provider:
+               github:
+                  authorization-uri: https://example.com
+                  token-uri: https://example.com
+                  user-info-uri: https://example.com
+                  user-name-attribute: login
