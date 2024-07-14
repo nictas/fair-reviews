@@ -1,0 +1,41 @@
+server:
+   port: 8090
+spring:
+   application:
+      name: Fair Reviews Gateway
+   security:
+      oauth2:
+         client:
+            registration:
+               github:
+# Set via env variable: SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GITHUB_CLIENT_ID
+                  client-id: ''
+# Set via env variable: SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GITHUB_CLIENT_SECRET
+                  client-secret: ''
+                  scope: public_repo,read:org,read:user,repo:status,user:email
+                  authorization-grant-type: authorization_code
+                  redirect-uri: '{baseUrl}/login/oauth2/code/{registrationId}'
+                  client-name: GitHub
+            provider:
+               github:
+# Set via env variable: SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_GITHUB_AUTHORIZATION_URI
+                  authorization-uri: ''
+# Set via env variable: SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_GITHUB_TOKEN_URI
+                  token-uri: ''
+# Set via env variable: SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_GITHUB_USER_INFO_URI
+                  user-info-uri: ''
+                  user-name-attribute: login
+   cloud:
+      gateway:
+         routes:
+         -  id: backend
+            uri: http://localhost:8080
+            predicates:
+            - Path=/rest/**
+            filters:
+            - TokenRelay=
+            - StripPrefix=1
+         -  id: ui
+            uri: http://localhost:4200
+            predicates:
+            - Path=/**
