@@ -37,19 +37,19 @@ public class GitHubClientProvider {
 
     public GitHubClient getClientForUrl(String url) {
         GitHubSettings settings = settingsProvider.getSettingsForUrl(url);
-        log.info("Received settings for URL: {}", settings);
+        log.debug("Received settings for URL: {}", settings);
         return clientCache.computeIfAbsent(settings.getUrl(),
                 unused -> createClient(settings.getApi(), settings.getToken()));
     }
 
     public GitHubClient getClientForUrl(String url, String token) {
         GitHubSettings settings = settingsProvider.getSettingsForUrl(url);
-        log.info("Received settings for URL: {}", settings);
+        log.debug("Received settings for URL: {}", settings);
         return createClient(settings.getApi(), token);
     }
 
     private GitHubClient createClient(String apiUrl, String token) {
-        log.info("Creating GitHub client for URL: {}", apiUrl);
+        log.debug("Creating GitHub client for URL: {}", apiUrl);
         return new GitHubClient(delegateConstructor.apply(apiUrl, token));
     }
 
