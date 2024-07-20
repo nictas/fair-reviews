@@ -29,13 +29,13 @@ spring:
       gateway:
          routes:
          -  id: backend
-            uri: http://localhost:8080
+            uri: ${backend-url}
             predicates:
             - Path=/rest/**
             filters:
             - TokenRelay=
             - StripPrefix=1
          -  id: ui
-            uri: http://localhost:4200
+            uri: ${ui-url}
             predicates:
             - Path=/**
