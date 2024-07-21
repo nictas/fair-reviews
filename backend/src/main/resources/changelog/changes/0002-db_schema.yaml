@@ -1,0 +1,38 @@
+databaseChangeLog:
+-  changeSet:
+      id: 2
+      author: nictas
+      changes:
+      -  addColumn:
+            tableName: pull_request_review
+            columns:
+            -  column:
+                  name: created_at
+                  type: datetime
+      -  update:
+            tableName: pull_request_review
+            columns:
+            -  column:
+                  name: created_at
+                  valueComputed: CURRENT_TIMESTAMP
+            where: created_at IS NULL
+      -  addNotNullConstraint:
+            columnName: created_at
+            tableName: pull_request_review
+            columnDataType: datetime
+      -  createIndex:
+            indexName: idx_pull_request_review_created_at
+            tableName: pull_request_review
+            columns:
+            -  column:
+                  name: created_at
+      -  addNotNullConstraint:
+            columnName: created_at
+            tableName: multiplier
+            columnDataType: datetime
+      -  createIndex:
+            indexName: idx_multiplier_created_at
+            tableName: multiplier
+            columns:
+            -  column:
+                  name: created_at
