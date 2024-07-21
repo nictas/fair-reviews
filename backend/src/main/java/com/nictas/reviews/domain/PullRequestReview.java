@@ -1,5 +1,6 @@
 package com.nictas.reviews.domain;
 
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 import org.hibernate.annotations.Type;
@@ -13,6 +14,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.Setter;
 import lombok.With;
 import lombok.extern.jackson.Jacksonized;
@@ -38,6 +40,9 @@ public class PullRequestReview {
     @Type(JsonBinaryType.class)
     @Column(columnDefinition = "jsonb")
     private PullRequestFileDetails pullRequestFileDetails;
+    @Builder.Default
+    @EqualsAndHashCode.Exclude
+    private OffsetDateTime createdAt = OffsetDateTime.now();
 
     protected PullRequestReview() {
         // Required by JPA.
