@@ -15,6 +15,8 @@ import org.springframework.web.cors.reactive.CorsConfigurationSource;
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 import org.springframework.web.util.pattern.PathPatternParser;
 
+import reactor.core.publisher.Mono;
+
 @Configuration
 @EnableWebFluxSecurity
 public class SecurityConfiguration {
@@ -27,6 +29,7 @@ public class SecurityConfiguration {
         return http.authorizeExchange(customizer -> customizer.anyExchange()
                 .permitAll())
                 .oauth2Login(Customizer.withDefaults())
+                .logout(customizer -> customizer.logoutSuccessHandler((exchange, authentication) -> Mono.empty()))
                 .csrf(CsrfSpec::disable)
                 .build();
     }
