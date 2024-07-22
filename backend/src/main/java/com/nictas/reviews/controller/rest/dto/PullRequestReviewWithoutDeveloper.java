@@ -1,5 +1,6 @@
 package com.nictas.reviews.controller.rest.dto;
 
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 import com.nictas.reviews.domain.Multiplier;
@@ -22,6 +23,7 @@ public class PullRequestReviewWithoutDeveloper {
     private final double score;
     private final PullRequestFileDetails pullRequestFileDetails;
     private final Multiplier multiplier;
+    private final OffsetDateTime createdAt;
 
     public static PullRequestReviewWithoutDeveloper from(PullRequestReview review) {
         return PullRequestReviewWithoutDeveloper.builder()
@@ -30,6 +32,7 @@ public class PullRequestReviewWithoutDeveloper {
                 .pullRequestUrl(review.getPullRequestUrl())
                 .pullRequestFileDetails(review.getPullRequestFileDetails())
                 .multiplier(review.getMultiplier())
+                .createdAt(review.getCreatedAt())
                 .build();
     }
 
