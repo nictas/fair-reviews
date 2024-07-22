@@ -93,6 +93,7 @@ class DeveloperControllerTest {
                                     .build())))
                     .score(20.7)
                     .multiplier(MULTIPLIER)
+                    .createdAt(OffsetDateTime.of(2024, 3, 3, 17, 15, 0, 0, ZoneOffset.UTC))
                     .build(),
             PullRequestReview.builder()
                     .id(UUID.fromString("406d6cd4-6801-48ae-bcfa-649d4986bdf8"))
@@ -111,6 +112,7 @@ class DeveloperControllerTest {
                                     .build())))
                     .score(60.1)
                     .multiplier(MULTIPLIER)
+                    .createdAt(OffsetDateTime.of(2024, 3, 3, 18, 15, 0, 0, ZoneOffset.UTC))
                     .build(),
             PullRequestReview.builder()
                     .id(UUID.fromString("636c02b9-0675-4aa1-84d1-4f1c5690a259"))
@@ -124,6 +126,7 @@ class DeveloperControllerTest {
                                     .build())))
                     .score(7.0)
                     .multiplier(MULTIPLIER)
+                    .createdAt(OffsetDateTime.of(2024, 3, 3, 19, 15, 0, 0, ZoneOffset.UTC))
                     .build());
 
     @Autowired

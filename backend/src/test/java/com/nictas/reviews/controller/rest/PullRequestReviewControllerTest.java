@@ -89,6 +89,7 @@ class PullRequestReviewControllerTest {
             .score(20.7)
             .developer(DEVELOPER_FOO)
             .multiplier(MULTIPLIER)
+            .createdAt(OffsetDateTime.of(2024, 3, 3, 19, 15, 0, 0, ZoneOffset.UTC))
             .build();
     private static final PullRequestReview REVIEW_2 = PullRequestReview.builder()
             .id(UUID.fromString("dcb724e6-d2cb-4e63-a1ab-d5bc59e5cfdc"))
@@ -107,6 +108,7 @@ class PullRequestReviewControllerTest {
             .score(60.1)
             .developer(DEVELOPER_FOO)
             .multiplier(MULTIPLIER)
+            .createdAt(OffsetDateTime.of(2024, 3, 3, 20, 15, 0, 0, ZoneOffset.UTC))
             .build();
     private static final PullRequestReview REVIEW_3 = PullRequestReview.builder()
             .id(UUID.fromString("ee2c8153-17a8-486f-93c1-78599eb7e5bf"))
@@ -120,6 +122,7 @@ class PullRequestReviewControllerTest {
             .score(7.0)
             .developer(DEVELOPER_BAR)
             .multiplier(MULTIPLIER)
+            .createdAt(OffsetDateTime.of(2024, 3, 3, 21, 15, 0, 0, ZoneOffset.UTC))
             .build();
     private static final PullRequestReview REVIEW_4 = PullRequestReview.builder()
             .id(UUID.fromString("91a8bdeb-8457-4905-bd08-9d2a46f27b92"))
@@ -133,6 +136,7 @@ class PullRequestReviewControllerTest {
             .score(20.7)
             .developer(DEVELOPER_BAR)
             .multiplier(MULTIPLIER)
+            .createdAt(OffsetDateTime.of(2024, 3, 3, 22, 15, 0, 0, ZoneOffset.UTC))
             .build();
 
     @Autowired
