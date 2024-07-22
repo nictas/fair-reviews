@@ -12,3 +12,5 @@ spring:
                   token-uri: https://example.com
                   user-info-uri: https://example.com
                   user-name-attribute: login
+backend-url: https://example.com
+ui-url: https://example.com
