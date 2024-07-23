@@ -1,10 +1,5 @@
 package com.nictas.reviews.service.scheduled;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Collections;
@@ -15,6 +10,8 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
@@ -31,6 +28,13 @@ import com.nictas.reviews.repository.DeveloperRepository;
 import com.nictas.reviews.repository.PullRequestReviewRepository;
 import com.nictas.reviews.service.github.GitHubClient;
 import com.nictas.reviews.service.github.GitHubClientProvider;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class DeveloperSyncServiceTest {
@@ -99,6 +103,9 @@ class DeveloperSyncServiceTest {
     private PullRequestReviewRepository pullRequestReviewRepository;
 
     private DeveloperSyncService developerSyncService;
+
+    @Captor
+    private ArgumentCaptor<PullRequestReview> reviewCaptor;
 
     @BeforeEach
     void setUp() {
@@ -175,8 +182,27 @@ class DeveloperSyncServiceTest {
         verify(developerRepository).save(developerFoo.withScore(10.0));
         verify(developerRepository, times(1)).save(any()); // Verify that no other developers were created
 
-        verify(pullRequestReviewRepository).save(REVIEW_1.withDeveloper(developerFoo));
-        verify(pullRequestReviewRepository).save(REVIEW_2.withDeveloper(developerFoo));
+        verify(pullRequestReviewRepository, times(2)).save(reviewCaptor.capture());
+
+        List<PullRequestReview> replicatedReviews = reviewCaptor.getAllValues();
+
+        PullRequestReview replicatedReview1 = replicatedReviews.get(0);
+        assertEquals(developerFoo, replicatedReview1.getDeveloper());
+        assertEquals(REVIEW_1.getScore(), replicatedReview1.getScore());
+        assertEquals(REVIEW_1.getMultiplier(), replicatedReview1.getMultiplier());
+        assertEquals(REVIEW_1.getPullRequestUrl(), replicatedReview1.getPullRequestUrl());
+        assertEquals(REVIEW_1.getPullRequestFileDetails(), replicatedReview1.getPullRequestFileDetails());
+        assertNotEquals(REVIEW_1.getId(), replicatedReview1.getId());
+        assertNotEquals(REVIEW_1.getCreatedAt(), replicatedReview1.getCreatedAt());
+
+        PullRequestReview replicatedReview2 = replicatedReviews.get(1);
+        assertEquals(developerFoo, replicatedReview2.getDeveloper());
+        assertEquals(REVIEW_2.getScore(), replicatedReview2.getScore());
+        assertEquals(REVIEW_2.getMultiplier(), replicatedReview2.getMultiplier());
+        assertEquals(REVIEW_2.getPullRequestUrl(), replicatedReview2.getPullRequestUrl());
+        assertEquals(REVIEW_2.getPullRequestFileDetails(), replicatedReview2.getPullRequestFileDetails());
+        assertNotEquals(REVIEW_2.getId(), replicatedReview2.getId());
+        assertNotEquals(REVIEW_2.getCreatedAt(), replicatedReview2.getCreatedAt());
     }
 
 }
