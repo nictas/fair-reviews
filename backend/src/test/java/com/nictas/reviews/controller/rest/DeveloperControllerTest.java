@@ -2,15 +2,20 @@ package com.nictas.reviews.controller.rest;
 
 import static com.nictas.reviews.TestUtils.assertJsonsMatch;
 import static com.nictas.reviews.TestUtils.getResourceAsString;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -19,6 +24,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
+import org.springframework.scheduling.TaskScheduler;
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -36,6 +42,7 @@ import com.nictas.reviews.domain.PullRequestReview;
 import com.nictas.reviews.error.NotFoundException;
 import com.nictas.reviews.service.DeveloperService;
 import com.nictas.reviews.service.PullRequestReviewService;
+import com.nictas.reviews.service.scheduled.DeveloperSyncService;
 
 @WebMvcTest(DeveloperController.class)
 @Import(SecurityConfiguration.class)
@@ -136,10 +143,16 @@ class DeveloperControllerTest {
     private DeveloperService developerService;
 
     @MockBean
+    private DeveloperSyncService developerSyncService;
+
+    @MockBean
     private GitHubOpaqueTokenIntrospector introspector;
 
     @MockBean
     private PullRequestReviewService pullRequestReviewService;
+
+    @MockBean
+    private TaskScheduler taskScheduler;
 
     @Test
     void testGetDevelopers() throws Exception {
@@ -269,6 +282,36 @@ class DeveloperControllerTest {
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.message")
                         .value("Could not find developer with login: foo"));
+    }
+
+    @Test
+    void testSyncDevelopers() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.post("/developers/sync")
+                .with(SecurityMockMvcRequestPostProcessors.opaqueToken()
+                        .authorities(ControllerTestData.AUTHORITIES_ADMIN)))
+                .andExpect(MockMvcResultMatchers.status()
+                        .isAccepted());
+
+        ArgumentCaptor<Runnable> runnableCaptor = ArgumentCaptor.forClass(Runnable.class);
+        ArgumentCaptor<Instant> instantCaptor = ArgumentCaptor.forClass(Instant.class);
+        verify(taskScheduler).schedule(runnableCaptor.capture(), instantCaptor.capture());
+
+        Runnable runnable = runnableCaptor.getValue();
+        runnable.run();
+        verify(developerSyncService).fetchAndUpdateDevelopers();
+
+        Instant instant = instantCaptor.getValue();
+        Instant now = Instant.now();
+        assertTrue(instant.isBefore(now) || instant.equals(now));
+    }
+
+    @Test
+    void testSyncDevelopersForbidden() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.post("/developers/sync")
+                .with(SecurityMockMvcRequestPostProcessors.opaqueToken()
+                        .authorities(ControllerTestData.AUTHORITIES_USER)))
+                .andExpect(MockMvcResultMatchers.status()
+                        .isForbidden());
     }
 
 }
