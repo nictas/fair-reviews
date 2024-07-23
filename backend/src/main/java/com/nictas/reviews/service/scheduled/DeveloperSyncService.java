@@ -1,8 +1,10 @@
 package com.nictas.reviews.service.scheduled;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -99,7 +101,9 @@ public class DeveloperSyncService {
 
     private void createNewDeveloperHistory(Developer developer, Developer startingPoint) {
         pullRequestReviewRepository.findByDeveloperLogin(startingPoint.getLogin(), Pageable.unpaged())
-                .map(review -> review.withDeveloper(developer))
+                .map(review -> review.withId(UUID.randomUUID())
+                        .withCreatedAt(OffsetDateTime.now())
+                        .withDeveloper(developer))
                 .forEach(review -> {
                     log.info("Creating PR review: {}", review);
                     pullRequestReviewRepository.save(review);
