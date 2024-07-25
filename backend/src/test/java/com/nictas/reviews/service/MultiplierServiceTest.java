@@ -215,8 +215,8 @@ class MultiplierServiceTest {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
                 () -> multiplierService.deleteMultiplier(id));
 
-        assertEquals(String.format("Multiplier %s is still referenced in %d reviews: %s", id, reviewsPage.getSize(),
-                List.of(REVIEW_1.getId(), REVIEW_2.getId())), exception.getMessage());
+        assertEquals(String.format("Multiplier %s is still referenced in %d reviews", id, reviewsPage.getSize()),
+                exception.getMessage());
     }
 
 }
