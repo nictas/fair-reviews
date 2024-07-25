@@ -74,8 +74,8 @@ public class MultiplierService {
         if (!reviews.isEmpty()) {
             List<UUID> reviewIds = reviews.map(PullRequestReview::getId)
                     .toList();
-            throw new IllegalArgumentException(String.format("Multiplier %s is still referenced in %d reviews: %s", id,
-                    reviewIds.size(), reviewIds));
+            throw new IllegalArgumentException(
+                    String.format("Multiplier %s is still referenced in %d reviews", id, reviewIds.size()));
         }
         repository.deleteById(id);
     }
