@@ -8,11 +8,15 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
-import org.springframework.security.config.web.server.ServerHttpSecurity.CsrfSpec;
 import org.springframework.security.web.server.SecurityWebFilterChain;
+import org.springframework.security.web.server.csrf.CookieServerCsrfTokenRepository;
+import org.springframework.security.web.server.csrf.CsrfToken;
+import org.springframework.security.web.server.csrf.ServerCsrfTokenRequestHandler;
+import org.springframework.security.web.server.csrf.XorServerCsrfTokenRequestAttributeHandler;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.reactive.CorsConfigurationSource;
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
+import org.springframework.web.server.WebFilter;
 import org.springframework.web.util.pattern.PathPatternParser;
 
 import reactor.core.publisher.Mono;
@@ -26,11 +30,16 @@ public class SecurityConfiguration {
 
     @Bean
     public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
+        // CSRF configuration (including the csrfCookieWebFilter bean below) gotten from:
+        // https://docs.spring.io/spring-security/reference/5.8/migration/reactive.html#_i_am_using_angularjs_or_another_javascript_framework
+        XorServerCsrfTokenRequestAttributeHandler delegate = new XorServerCsrfTokenRequestAttributeHandler();
+        ServerCsrfTokenRequestHandler requestHandler = delegate::handle;
         return http.authorizeExchange(customizer -> customizer.anyExchange()
                 .permitAll())
                 .oauth2Login(Customizer.withDefaults())
                 .logout(customizer -> customizer.logoutSuccessHandler((exchange, authentication) -> Mono.empty()))
-                .csrf(CsrfSpec::disable)
+                .csrf(customizer -> customizer.csrfTokenRepository(CookieServerCsrfTokenRepository.withHttpOnlyFalse())
+                        .csrfTokenRequestHandler(requestHandler))
                 .build();
     }
 
@@ -46,6 +55,17 @@ public class SecurityConfiguration {
         source.registerCorsConfiguration("/**", configuration);
 
         return source;
+    }
+
+    @Bean
+    WebFilter csrfCookieWebFilter() {
+        return (exchange, chain) -> {
+            Mono<CsrfToken> csrfToken = exchange.getAttributeOrDefault(CsrfToken.class.getName(), Mono.empty());
+            return csrfToken.doOnSuccess(token -> {
+                /* Ensures the token is subscribed to. */
+            })
+                    .then(chain.filter(exchange));
+        };
     }
 
 }
