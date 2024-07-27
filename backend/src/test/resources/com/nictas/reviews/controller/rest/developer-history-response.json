@@ -5,6 +5,8 @@
          "pullRequestUrl":"https://github.com/foo/bar/pull/87",
          "score":20.7,
          "pullRequestFileDetails":{
+            "additions":15,
+            "deletions":11,
             "changedFiles":[
                {
                   "name":"foo.java",
@@ -40,6 +42,8 @@
          "pullRequestUrl":"https://github.com/foo/bar/pull/90",
          "score":60.1,
          "pullRequestFileDetails":{
+            "additions":11,
+            "deletions":25,
             "changedFiles":[
                {
                   "name":"foo.java",
@@ -80,6 +84,8 @@
          "pullRequestUrl":"https://github.com/foo/bar/pull/91",
          "score":7.0,
          "pullRequestFileDetails":{
+            "additions":7,
+            "deletions":0,
             "changedFiles":[
                {
                   "name":"foo.java",
@@ -124,9 +130,8 @@
       "unpaged":false
    },
    "last":true,
-   "totalElements":3,
    "totalPages":1,
-   "first":true,
+   "totalElements":3,
    "size":20,
    "number":0,
    "sort":{
@@ -134,6 +139,7 @@
       "sorted":false,
       "unsorted":true
    },
+   "first":true,
    "numberOfElements":3,
    "empty":false
 }

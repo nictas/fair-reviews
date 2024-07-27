@@ -70,7 +70,7 @@ class PullRequestScoreComputerTest {
 
     @Test
     void testComputeScore() {
-        PullRequestFileDetails pullRequestInfo = new PullRequestFileDetails(List.of(//
+        PullRequestFileDetails pullRequestInfo = new PullRequestFileDetails(95, 90, List.of(//
                 ChangedFile.builder()
                         .name("file1.txt")
                         .additions(20)
@@ -101,7 +101,7 @@ class PullRequestScoreComputerTest {
 
     @Test
     void testComputeScoreWithNoChanges() {
-        PullRequestFileDetails pullRequestInfo = new PullRequestFileDetails(Collections.emptyList());
+        PullRequestFileDetails pullRequestInfo = new PullRequestFileDetails(0, 0, Collections.emptyList());
         when(client.getPullRequestInfo(any())).thenReturn(pullRequestInfo);
 
         PullRequestAssessment assessment = scoreComputer.computeScore(PR_URL);

@@ -54,7 +54,9 @@ public class GitHubClient {
                 changedFiles.add(changedFile);
             }
 
-            return new PullRequestFileDetails(changedFiles);
+            int additions = ghPullRequest.getAdditions();
+            int deletions = ghPullRequest.getDeletions();
+            return new PullRequestFileDetails(additions, deletions, changedFiles);
         } catch (IOException e) {
             throw new GitHubClientException(String.format("Error while fetching info for PR %s/%s/%d: %s",
                     pullRequest.getOwner(), pullRequest.getRepository(), pullRequest.getNumber(), e.getMessage()), e);

@@ -13,6 +13,8 @@ import lombok.extern.jackson.Jacksonized;
 @RequiredArgsConstructor
 public class PullRequestFileDetails {
 
+    private final int additions;
+    private final int deletions;
     private final List<ChangedFile> changedFiles;
 
     @Data

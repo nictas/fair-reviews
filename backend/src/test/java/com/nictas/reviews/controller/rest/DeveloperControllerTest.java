@@ -92,7 +92,7 @@ class DeveloperControllerTest {
                     .id(UUID.fromString("bf6eb647-4809-4643-96e3-be8ade25afbd"))
                     .developer(DEVELOPER_FOO)
                     .pullRequestUrl("https://github.com/foo/bar/pull/87")
-                    .pullRequestFileDetails(new PullRequestFileDetails(List.of(//
+                    .pullRequestFileDetails(new PullRequestFileDetails(15, 11, List.of(//
                             ChangedFile.builder()
                                     .name("foo.java")
                                     .additions(15)
@@ -106,7 +106,7 @@ class DeveloperControllerTest {
                     .id(UUID.fromString("406d6cd4-6801-48ae-bcfa-649d4986bdf8"))
                     .developer(DEVELOPER_FOO)
                     .pullRequestUrl("https://github.com/foo/bar/pull/90")
-                    .pullRequestFileDetails(new PullRequestFileDetails(List.of(//
+                    .pullRequestFileDetails(new PullRequestFileDetails(11, 25, List.of(//
                             ChangedFile.builder()
                                     .name("foo.java")
                                     .additions(10)
@@ -125,7 +125,7 @@ class DeveloperControllerTest {
                     .id(UUID.fromString("636c02b9-0675-4aa1-84d1-4f1c5690a259"))
                     .developer(DEVELOPER_FOO)
                     .pullRequestUrl("https://github.com/foo/bar/pull/91")
-                    .pullRequestFileDetails(new PullRequestFileDetails(List.of(//
+                    .pullRequestFileDetails(new PullRequestFileDetails(7, 0, List.of(//
                             ChangedFile.builder()
                                     .name("foo.java")
                                     .additions(7)

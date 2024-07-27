@@ -134,6 +134,8 @@ class GitHubClientTest {
         private static final int FOO_DELETIONS = 15;
         private static final int BAR_ADDITIONS = 73;
         private static final int BAR_DELETIONS = 11;
+        private static final int TOTAL_ADDITIONS = 83;
+        private static final int TOTAL_DELETIONS = 26;
 
         @Mock
         private GitHubSettingsProvider settings;
@@ -164,6 +166,8 @@ class GitHubClientTest {
             when(delegate.getRepository(String.format("%s/%s", OWNER, REPOSITORY))).thenReturn(repository);
             when(repository.getPullRequest(PR_NUMBER)).thenReturn(pullRequest);
             when(pullRequest.listFiles()).thenReturn(fileDetailIterable);
+            when(pullRequest.getAdditions()).thenReturn(TOTAL_ADDITIONS);
+            when(pullRequest.getDeletions()).thenReturn(TOTAL_DELETIONS);
             when(fileDetailIterable.toList()).thenReturn(Arrays.asList(fileDetailFoo, fileDetailBar));
             when(fileDetailFoo.getFilename()).thenReturn(FOO_FILE_NAME);
             when(fileDetailFoo.getAdditions()).thenReturn(FOO_ADDITIONS);
@@ -174,17 +178,18 @@ class GitHubClientTest {
             PullRequest pullRequestFragments = new PullRequest(OWNER, REPOSITORY, PR_NUMBER);
 
             PullRequestFileDetails pullRequestInfo = gitHubClient.getPullRequestInfo(pullRequestFragments);
-            PullRequestFileDetails expectedPullRequestInfo = new PullRequestFileDetails(List.of(//
-                    ChangedFile.builder()
-                            .name(FOO_FILE_NAME)
-                            .additions(FOO_ADDITIONS)
-                            .deletions(FOO_DELETIONS)
-                            .build(),
-                    ChangedFile.builder()
-                            .name(BAR_FILE_NAME)
-                            .additions(BAR_ADDITIONS)
-                            .deletions(BAR_DELETIONS)
-                            .build()));
+            PullRequestFileDetails expectedPullRequestInfo = new PullRequestFileDetails(TOTAL_ADDITIONS,
+                    TOTAL_DELETIONS, List.of(//
+                            ChangedFile.builder()
+                                    .name(FOO_FILE_NAME)
+                                    .additions(FOO_ADDITIONS)
+                                    .deletions(FOO_DELETIONS)
+                                    .build(),
+                            ChangedFile.builder()
+                                    .name(BAR_FILE_NAME)
+                                    .additions(BAR_ADDITIONS)
+                                    .deletions(BAR_DELETIONS)
+                                    .build()));
             assertEquals(expectedPullRequestInfo, pullRequestInfo);
         }
 
