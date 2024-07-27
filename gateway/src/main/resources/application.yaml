@@ -19,9 +19,9 @@ spring:
             provider:
                github:
 # Set via env variable: SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_GITHUB_AUTHORIZATION_URI
-                  authorization-uri: ''
+                  authorization-uri: ${github-url}/login/oauth/authorize
 # Set via env variable: SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_GITHUB_TOKEN_URI
-                  token-uri: ''
+                  token-uri: ${github-url}/login/oauth/access_token
 # Set via env variable: SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_GITHUB_USER_INFO_URI
                   user-info-uri: ''
                   user-name-attribute: login

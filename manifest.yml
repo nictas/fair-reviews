@@ -1,0 +1,50 @@
+---
+applications:
+- name: fair-reviews-backend
+  memory: 1.5G
+  disk_quota: 512M
+  instances: 1
+  stack: cflinuxfs4
+  buildpacks:
+    - java_buildpack
+  path: backend/target/fair-reviews-backend-0.6.0-SNAPSHOT.jar
+  routes:
+    - route: fair-reviews-backend.((domain))
+  env:
+    JBP_CONFIG_OPEN_JDK_JRE: '{ jre: { version: 17.+ } }'
+    JBP_CONFIG_SPRING_AUTO_RECONFIGURATION: '{ enabled: false }'
+    JBP_CONFIG_JAVA_OPTS: "[java_opts: '-XX:MaxDirectMemorySize=150m']"
+    SPRING_PROFILES_ACTIVE: cloud
+    DEVELOPERS_GITHUB_ORG: ((github-org))
+    DEVELOPERS_GITHUB_TEAM: ((github-team))
+    DEVELOPERS_GITHUB_URL: ((github-url))
+    # Tokens for accessing the different GitHub instances. Format:
+    # {"<GITHUB_URL>:"<TOKEN>"}
+    GITHUB_TOKENS: ((github-tokens))
+  services:
+  - fair-reviews-db
+  - fair-reviews-logs
+
+- name: fair-reviews-gateway
+  memory: 1.5G
+  disk_quota: 512M
+  instances: 1
+  stack: cflinuxfs4
+  buildpacks:
+    - java_buildpack
+  path: gateway/target/fair-reviews-gateway-0.6.0-SNAPSHOT.jar
+  routes:
+    - route: fair-reviews.((domain))
+  env:
+    JBP_CONFIG_OPEN_JDK_JRE: '{ jre: { version: 17.+ } }'
+    JBP_CONFIG_SPRING_AUTO_RECONFIGURATION: '{ enabled: false }'
+    JBP_CONFIG_JAVA_OPTS: "[java_opts: '-XX:MaxDirectMemorySize=150m']"
+    SPRING_PROFILES_ACTIVE: cloud
+    GITHUB_URL: ((github-url))
+    SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_GITHUB_USER_INFO_URI: ((github-user-info-url))
+    BACKEND_URL: https://fair-reviews-backend.((domain))
+    UI_URL: https://fair-reviews-ui.((domain))
+    SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GITHUB_CLIENT_ID: ((github-client-id))
+    SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GITHUB_CLIENT_SECRET: ((github-client-secret))
+  services:
+  - fair-reviews-logs
