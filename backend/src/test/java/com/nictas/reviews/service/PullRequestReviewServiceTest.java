@@ -41,7 +41,7 @@ import com.nictas.reviews.service.score.PullRequestScoreComputer.PullRequestAsse
 class PullRequestReviewServiceTest {
 
     private static final String PR_URL = "https://example.com/foo/bar/123";
-    private static final PullRequestFileDetails PR_FILE_DETAILS = new PullRequestFileDetails(List.of(//
+    private static final PullRequestFileDetails PR_FILE_DETAILS = new PullRequestFileDetails(138, 105, List.of(//
             ChangedFile.builder()
                     .name("file1.txt")
                     .additions(10)
@@ -69,7 +69,7 @@ class PullRequestReviewServiceTest {
     private static final PullRequestReview REVIEW_1 = PullRequestReview.builder()
             .id(UUID.fromString("91a8bdeb-8457-4905-bd08-9d2a46f27b92"))
             .pullRequestUrl("https://github.com/foo/bar/pull/87")
-            .pullRequestFileDetails(new PullRequestFileDetails(List.of(//
+            .pullRequestFileDetails(new PullRequestFileDetails(15, 11, List.of(//
                     ChangedFile.builder()
                             .name("foo.java")
                             .additions(15)
@@ -81,7 +81,7 @@ class PullRequestReviewServiceTest {
     private static final PullRequestReview REVIEW_2 = PullRequestReview.builder()
             .id(UUID.fromString("dcb724e6-d2cb-4e63-a1ab-d5bc59e5cfdc"))
             .pullRequestUrl("https://github.com/foo/bar/pull/90")
-            .pullRequestFileDetails(new PullRequestFileDetails(List.of(//
+            .pullRequestFileDetails(new PullRequestFileDetails(11, 25, List.of(//
                     ChangedFile.builder()
                             .name("foo.java")
                             .additions(10)

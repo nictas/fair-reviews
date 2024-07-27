@@ -28,6 +28,8 @@
    },
    "pullRequestUrl":"https://github.com/foo/bar/pull/87",
    "pullRequestFileDetails":{
+      "additions":15,
+      "deletions":11,
       "changedFiles":[
          {
             "name":"foo.java",

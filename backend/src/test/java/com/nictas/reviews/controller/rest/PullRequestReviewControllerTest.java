@@ -80,7 +80,7 @@ class PullRequestReviewControllerTest {
     private static final PullRequestReview REVIEW_1 = PullRequestReview.builder()
             .id(UUID.fromString("91a8bdeb-8457-4905-bd08-9d2a46f27b92"))
             .pullRequestUrl("https://github.com/foo/bar/pull/87")
-            .pullRequestFileDetails(new PullRequestFileDetails(List.of(//
+            .pullRequestFileDetails(new PullRequestFileDetails(15, 11, List.of(//
                     ChangedFile.builder()
                             .name("foo.java")
                             .additions(15)
@@ -94,7 +94,7 @@ class PullRequestReviewControllerTest {
     private static final PullRequestReview REVIEW_2 = PullRequestReview.builder()
             .id(UUID.fromString("dcb724e6-d2cb-4e63-a1ab-d5bc59e5cfdc"))
             .pullRequestUrl("https://github.com/foo/bar/pull/90")
-            .pullRequestFileDetails(new PullRequestFileDetails(List.of(//
+            .pullRequestFileDetails(new PullRequestFileDetails(11, 25, List.of(//
                     ChangedFile.builder()
                             .name("foo.java")
                             .additions(10)
@@ -113,7 +113,7 @@ class PullRequestReviewControllerTest {
     private static final PullRequestReview REVIEW_3 = PullRequestReview.builder()
             .id(UUID.fromString("ee2c8153-17a8-486f-93c1-78599eb7e5bf"))
             .pullRequestUrl("https://github.com/foo/bar/pull/91")
-            .pullRequestFileDetails(new PullRequestFileDetails(List.of(//
+            .pullRequestFileDetails(new PullRequestFileDetails(7, 0, List.of(//
                     ChangedFile.builder()
                             .name("foo.java")
                             .additions(7)
@@ -127,7 +127,7 @@ class PullRequestReviewControllerTest {
     private static final PullRequestReview REVIEW_4 = PullRequestReview.builder()
             .id(UUID.fromString("91a8bdeb-8457-4905-bd08-9d2a46f27b92"))
             .pullRequestUrl("https://github.com/foo/bar/pull/87")
-            .pullRequestFileDetails(new PullRequestFileDetails(List.of(//
+            .pullRequestFileDetails(new PullRequestFileDetails(15, 11, List.of(//
                     ChangedFile.builder()
                             .name("foo.java")
                             .additions(15)
