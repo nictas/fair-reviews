@@ -1,0 +1,6 @@
+spring:
+ datasource:
+    username: ${vcap.services.fair-reviews-db.credentials.username}
+    password: ${vcap.services.fair-reviews-db.credentials.password}
+    url: jdbc:postgresql://${vcap.services.fair-reviews-db.credentials.hostname}:${vcap.services.fair-reviews-db.credentials.port}/${vcap.services.fair-reviews-db.credentials.dbname}
+    driver-class-name: org.postgresql.Driver
